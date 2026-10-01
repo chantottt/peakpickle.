@@ -1,0 +1,605 @@
+{
+  "checkedAt": "2026-10-01T05:43:18.276Z",
+  "checks": [
+    {
+      "route": "/",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Your Court.Your Match.Your Turn.",
+      "width": 1440
+    },
+    {
+      "route": "/dashboard",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Good morning!",
+      "width": 1440
+    },
+    {
+      "route": "/courts",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Courts",
+      "width": 1440
+    },
+    {
+      "route": "/courts/0000000000000000000000c8",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Riverside Court",
+      "width": 1440
+    },
+    {
+      "route": "/reservations",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Reservations",
+      "width": 1440
+    },
+    {
+      "route": "/reservations/new",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1440,
+      "title": "New Court Reservation",
+      "width": 1440
+    },
+    {
+      "route": "/reservations/00000000000000000000012c/edit",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1440,
+      "title": "Edit Reservation",
+      "width": 1440
+    },
+    {
+      "route": "/queue",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Live Queue",
+      "width": 1440
+    },
+    {
+      "route": "/players",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Players",
+      "width": 1440
+    },
+    {
+      "route": "/players/000000000000000000000064",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Miguel Santos",
+      "width": 1440
+    },
+    {
+      "route": "/matchmaking",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Find Your Match",
+      "width": 1440
+    },
+    {
+      "route": "/matches",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Matches",
+      "width": 1440
+    },
+    {
+      "route": "/matches/000000000000000000000190",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1440,
+      "title": "Match Details",
+      "width": 1440
+    },
+    {
+      "route": "/rankings",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Rankings",
+      "width": 1440
+    },
+    {
+      "route": "/statistics",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1425,
+      "title": "Statistics",
+      "width": 1440
+    },
+    {
+      "route": "/",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Your Court.Your Match.Your Turn.",
+      "width": 1280
+    },
+    {
+      "route": "/dashboard",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Good morning!",
+      "width": 1280
+    },
+    {
+      "route": "/courts",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Courts",
+      "width": 1280
+    },
+    {
+      "route": "/courts/0000000000000000000000c8",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Riverside Court",
+      "width": 1280
+    },
+    {
+      "route": "/reservations",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Reservations",
+      "width": 1280
+    },
+    {
+      "route": "/reservations/new",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1280,
+      "title": "New Court Reservation",
+      "width": 1280
+    },
+    {
+      "route": "/reservations/00000000000000000000012c/edit",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1280,
+      "title": "Edit Reservation",
+      "width": 1280
+    },
+    {
+      "route": "/queue",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Live Queue",
+      "width": 1280
+    },
+    {
+      "route": "/players",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Players",
+      "width": 1280
+    },
+    {
+      "route": "/players/000000000000000000000064",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Miguel Santos",
+      "width": 1280
+    },
+    {
+      "route": "/matchmaking",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Find Your Match",
+      "width": 1280
+    },
+    {
+      "route": "/matches",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Matches",
+      "width": 1280
+    },
+    {
+      "route": "/matches/000000000000000000000190",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1280,
+      "title": "Match Details",
+      "width": 1280
+    },
+    {
+      "route": "/rankings",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Rankings",
+      "width": 1280
+    },
+    {
+      "route": "/statistics",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1265,
+      "title": "Statistics",
+      "width": 1280
+    },
+    {
+      "route": "/",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Your Court.Your Match.Your Turn.",
+      "width": 1024
+    },
+    {
+      "route": "/dashboard",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Good morning!",
+      "width": 1024
+    },
+    {
+      "route": "/courts",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Courts",
+      "width": 1024
+    },
+    {
+      "route": "/courts/0000000000000000000000c8",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Riverside Court",
+      "width": 1024
+    },
+    {
+      "route": "/reservations",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Reservations",
+      "width": 1024
+    },
+    {
+      "route": "/reservations/new",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1024,
+      "title": "New Court Reservation",
+      "width": 1024
+    },
+    {
+      "route": "/reservations/00000000000000000000012c/edit",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1024,
+      "title": "Edit Reservation",
+      "width": 1024
+    },
+    {
+      "route": "/queue",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Live Queue",
+      "width": 1024
+    },
+    {
+      "route": "/players",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Players",
+      "width": 1024
+    },
+    {
+      "route": "/players/000000000000000000000064",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Miguel Santos",
+      "width": 1024
+    },
+    {
+      "route": "/matchmaking",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Find Your Match",
+      "width": 1024
+    },
+    {
+      "route": "/matches",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Matches",
+      "width": 1024
+    },
+    {
+      "route": "/matches/000000000000000000000190",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Match Details",
+      "width": 1024
+    },
+    {
+      "route": "/rankings",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Rankings",
+      "width": 1024
+    },
+    {
+      "route": "/statistics",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 1009,
+      "title": "Statistics",
+      "width": 1024
+    },
+    {
+      "route": "/",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Your Court.Your Match.Your Turn.",
+      "width": 768
+    },
+    {
+      "route": "/dashboard",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Good morning!",
+      "width": 768
+    },
+    {
+      "route": "/courts",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Courts",
+      "width": 768
+    },
+    {
+      "route": "/courts/0000000000000000000000c8",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Riverside Court",
+      "width": 768
+    },
+    {
+      "route": "/reservations",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Reservations",
+      "width": 768
+    },
+    {
+      "route": "/reservations/new",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 768,
+      "title": "New Court Reservation",
+      "width": 768
+    },
+    {
+      "route": "/reservations/00000000000000000000012c/edit",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 768,
+      "title": "Edit Reservation",
+      "width": 768
+    },
+    {
+      "route": "/queue",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Live Queue",
+      "width": 768
+    },
+    {
+      "route": "/players",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Players",
+      "width": 768
+    },
+    {
+      "route": "/players/000000000000000000000064",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Miguel Santos",
+      "width": 768
+    },
+    {
+      "route": "/matchmaking",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Find Your Match",
+      "width": 768
+    },
+    {
+      "route": "/matches",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Matches",
+      "width": 768
+    },
+    {
+      "route": "/matches/000000000000000000000190",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Match Details",
+      "width": 768
+    },
+    {
+      "route": "/rankings",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Rankings",
+      "width": 768
+    },
+    {
+      "route": "/statistics",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 753,
+      "title": "Statistics",
+      "width": 768
+    },
+    {
+      "route": "/",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Your Court.Your Match.Your Turn.",
+      "width": 375
+    },
+    {
+      "route": "/dashboard",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Good morning!",
+      "width": 375
+    },
+    {
+      "route": "/courts",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Courts",
+      "width": 375
+    },
+    {
+      "route": "/courts/0000000000000000000000c8",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Riverside Court",
+      "width": 375
+    },
+    {
+      "route": "/reservations",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Reservations",
+      "width": 375
+    },
+    {
+      "route": "/reservations/new",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "New Court Reservation",
+      "width": 375
+    },
+    {
+      "route": "/reservations/00000000000000000000012c/edit",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Edit Reservation",
+      "width": 375
+    },
+    {
+      "route": "/queue",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Live Queue",
+      "width": 375
+    },
+    {
+      "route": "/players",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Players",
+      "width": 375
+    },
+    {
+      "route": "/players/000000000000000000000064",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Miguel Santos",
+      "width": 375
+    },
+    {
+      "route": "/matchmaking",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Find Your Match",
+      "width": 375
+    },
+    {
+      "route": "/matches",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Matches",
+      "width": 375
+    },
+    {
+      "route": "/matches/000000000000000000000190",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Match Details",
+      "width": 375
+    },
+    {
+      "route": "/rankings",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Rankings",
+      "width": 375
+    },
+    {
+      "route": "/statistics",
+      "apiError": false,
+      "brokenImages": [],
+      "scrollWidth": 360,
+      "title": "Statistics",
+      "width": 375
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "peakpickle-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js",
+    "seed": "npm run build && node dist/seed/run.js",
+    "demo": "npm run build && node dist/seed/demo.js",
+    "test": "npm run build && node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.19.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/cors": "^2.8.19",
+    "@types/node": "^24.7.1",
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.6",
+    "supertest": "^7.1.4",
+    "@types/supertest": "^6.0.3",
+    "mongodb-memory-server": "^10.2.3"
+  }
+}
