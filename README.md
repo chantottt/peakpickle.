@@ -16,7 +16,7 @@ Course: **CTADWEBL — Advanced Web Programming**, A.Y. 2026–2027.
 | smurfdei28  | [Fill with work actually completed] | [Username]     |
 | surla-nicko | [Fill with work actually completed] | [Username]     |
 
-GitHub repository: **[Add your actual repository URL]**.
+GitHub repository: **[PeakPickle on GitHub](https://github.com/chantottt/peakpickle.)**.
 
 The attached rubric requires strictly **2 or 3 members** and meaningful commits by each member using their own account. The three member identifiers above were supplied by the user. Add legal/full names if your class requires them, and fill only actual contributions. No accounts or commit history have been invented.
 
@@ -40,21 +40,21 @@ The DOCX's repository section requests separate client/server repositories, whil
 
 Desktop dashboard at 1440px:
 
-![PeakPickle desktop dashboard](docs/screenshots/dashboard-desktop.jpg)
+![PeakPickle desktop dashboard](screenshots/dashboard-desktop.jpg)
 
 Landing page:
 
-![PeakPickle landing page](docs/screenshots/landing-desktop.jpg)
+![PeakPickle landing page](screenshots/landing-desktop.jpg)
 
 Live queue:
 
-![PeakPickle live queue](docs/screenshots/queue-desktop.jpg)
+![PeakPickle live queue](screenshots/queue-desktop.jpg)
 
 Responsive reservations at 375px:
 
-![PeakPickle mobile-browser reservations](docs/screenshots/reservations-mobile.jpg)
+![PeakPickle mobile-browser reservations](screenshots/reservations-mobile.jpg)
 
-The primary visual reference is retained in `docs/wireframe.png`. See `docs/ASSETS.md` for image sources and placeholder disclosure.
+The paddle and ball logo was supplied for this project. The court photo is a presentation placeholder by Brian Zajac from [Unsplash](https://unsplash.com/photos/outdoor-pickleball-courts-surrounded-by-trees-and-grass-cNuo2I6bznQ) under the [Unsplash License](https://unsplash.com/license); it does not depict the demo venues.
 
 ## Folder structure
 
@@ -102,15 +102,7 @@ peakpickle/
 │   ├── .env.example
 │   ├── package.json
 │   └── tsconfig.json
-├── docs/
-│   ├── API.md
-│   ├── REQUIREMENTS.md
-│   ├── DEFENSE.md
-│   ├── TESTING.md
-│   ├── ASSETS.md
-│   ├── responsive-checks.json
-│   ├── wireframe.png
-│   └── screenshots/
+├── screenshots/       # Images shown in this README
 ├── tests/responsive.spec.ts
 ├── playwright.config.ts
 ├── package.json
@@ -211,7 +203,7 @@ npx playwright install chromium
 npm run test:ui
 ```
 
-To use an installed Edge browser on Windows, set `PEAKPICKLE_BROWSER_PATH` to its executable before `npm run test:ui`. The browser suite expects the seeded demo IDs and unmodified 17:00 reservations. See `docs/TESTING.md` for verified results and the demo flow.
+To use an installed Edge browser on Windows, set `PEAKPICKLE_BROWSER_PATH` to its executable before `npm run test:ui`. The browser suite expects the seeded demo IDs and unmodified 17:00 reservations. The backend integration suite passed during implementation; run `npm test` to verify this checkout.
 
 ## Routes
 
@@ -244,7 +236,7 @@ To use an installed Edge browser on Windows, set `PEAKPICKLE_BROWSER_PATH` to it
 5. **Statistics:** derive counts, positive elapsed match durations, court usage counts, last-seven-day completions, and start-hour distributions. Dashboard adds today's activity and upcoming bookings. Time boundaries use Manila.
 6. **Transitions/results:** reject invalid transitions with 400. Recording an ongoing match's result derives winners and atomically completes the match/queue and releases the court. Court and referenced-player document writes prevent races between conflicting operations across requests.
 
-See `docs/API.md` for full request/response examples, status rules, and algorithm details. See `docs/DEFENSE.md` for a short code walkthrough and demo script.
+The request/response examples and all 35 endpoints are in the API table below. The rules above summarize the processing algorithms.
 
 ## Responsive design
 
@@ -253,7 +245,7 @@ One React application uses CSS media queries and Tailwind theme tokens. Desktop 
 ## Known limitations and submission tasks
 
 - Atlas configuration and a live Atlas connectivity check remain dependent on your private credentials; integration testing uses a real local replica set.
-- The supplied group identifiers are recorded. Full names if required, actual contributions, repository URL, member-owned commits, GitHub publication/access, and Teams submission require your real class/account information.
+- The supplied group identifiers are recorded. Full names if required, actual contributions, member-owned commits, and Teams submission still require your real class/account information.
 - Authentication, payments, file uploads, automatic notifications, and public deployment are outside the requested core. This is a shared management workspace.
 - Queue updates poll every 15 seconds. Wait/finish estimates are predictions, not guarantees; the formula treats each preceding player as one average match duration as requested.
 - Reservations are completed/cancelled explicitly, not by a background job. Historic records may remain pending/confirmed until a manager updates them.
@@ -265,20 +257,19 @@ One React application uses CSS media queries and Tailwind theme tokens. Desktop 
 
 The folder is initialized as a Git repository on `main`. The ignore file excludes dependencies, real environments, compiled output, test artifacts, and MongoDB binaries. No author identity or member commits were fabricated.
 
-Each member should set their own Git identity, contribute explainable changes, and commit their own work. After creating the real GitHub repository:
+Each member should set their own Git identity, contribute explainable changes, and commit their own work. For later updates:
 
 ```powershell
 git add .
-git commit -m "Implement PeakPickle court reservation and queue system"
-git remote add origin YOUR_GITHUB_REPOSITORY_URL
-git push -u origin main
+git commit -m "Describe your actual changes"
+git push
 ```
 
-Use a public repository or grant the instructor access as required. Complete the member table and screenshots before final submission. The implementation checklist is in `docs/REQUIREMENTS.md`.
+The repository is public. Complete the member table with actual contributions before final submission.
 
 ## API endpoint table
 
-The following table is generated from the API reference and covers all 35 endpoints.
+The following table covers all 35 endpoints.
 
 | Method | Path                                       | Purpose                                                                         | Sample request                                                    | Sample response                                                                                                                                  |
 | ------ | ------------------------------------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
