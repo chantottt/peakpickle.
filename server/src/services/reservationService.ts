@@ -1,5 +1,4 @@
 import { Reservation } from '../models/Reservation.js';
-import { Player } from '../models/Player.js';
 import { assert } from '../utils/errors.js';
 import { parse, reservationSchema, validateId } from '../utils/validation.js';
 import { transition } from './transitions.js';
@@ -30,8 +29,12 @@ export async function saveReservation(body: unknown, id?: string) {
           ['pending', 'confirmed'].includes(record.status),
           'New reservations must be pending or confirmed.',
         );
-      await lockActivePlayers([String(record.playerId)], session);
-      // Cancellation still checks references, but need not check a now-unavailable slot.
+      // Finalizing an existing booking must remain possible after deactivation.
+      if (
+        ['pending', 'confirmed'].includes(record.status) ||
+        String(record.playerId) !== String(previous?.playerId)
+      )
+        await lockActivePlayers([String(record.playerId)], session);
       if (['pending', 'confirmed'].includes(record.status))
         await checkReservation(
           {

@@ -49,7 +49,12 @@ async function courtRows(id?: string) {
         nextAvailableTime:
           court.status === 'maintenance'
             ? null
-            : nextFreeTime(court.openingTime, court.closingTime, schedule, fromTime),
+            : nextFreeTime(
+                court.openingTime,
+                court.closingTime,
+                reservations.filter((row) => String(row.courtId) === String(court._id)),
+                fromTime,
+              ),
       };
     }),
   );

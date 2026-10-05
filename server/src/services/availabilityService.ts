@@ -3,6 +3,32 @@ import { Court } from '../models/Court.js';
 import { Reservation } from '../models/Reservation.js';
 import { assert } from '../utils/errors.js';
 import { parse, availabilitySchema } from '../utils/validation.js';
+import { localDate, localTime } from '../utils/time.js';
+
+// Called under the court transaction so booking writes and match starts serialize.
+export async function checkMatchStart(
+  courtId: string,
+  playerIds: string[],
+  now: Date,
+  session: ClientSession,
+) {
+  const court = await Court.findById(courtId).session(session);
+  assert(court, 'Record not found', 404);
+  const time = localTime(now);
+  assert(
+    time >= court.openingTime && time < court.closingTime,
+    'Cannot start a match outside court operating hours.',
+  );
+  const conflict = await Reservation.exists({
+    courtId,
+    reservationDate: localDate(now),
+    status: { $in: ['pending', 'confirmed'] },
+    startTime: { $lte: time },
+    endTime: { $gt: time },
+    playerId: { $nin: playerIds },
+  }).session(session);
+  assert(!conflict, 'Court is currently reserved for another player.');
+}
 export async function checkReservation(
   data: { courtId: string; reservationDate: string; startTime: string; endTime: string },
   excludeId?: string,

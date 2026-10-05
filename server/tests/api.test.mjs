@@ -1,4 +1,4 @@
-import { after, before, beforeEach, test } from 'node:test';
+import { after, afterEach, before, beforeEach, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
@@ -6,7 +6,7 @@ import request from 'supertest';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { app } from '../dist/app.js';
 import { seedData, seedId } from '../dist/seed/data.js';
-import { today } from '../dist/utils/time.js';
+import { today, nextFreeTime } from '../dist/utils/time.js';
 let database;
 const id = (value) => seedId(value).toString();
 const reservation = (extra = {}) => ({
@@ -28,11 +28,137 @@ before(async () => {
   await mongoose.connect(database.getUri('peakpickle_tests'));
 });
 beforeEach(async () => {
+  process.env.BUSINESS_TIMEZONE = 'Asia/Manila';
+  mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-05T04:00:00Z') });
   await seedData();
 });
+afterEach(() => mock.timers.reset());
 after(async () => {
   await mongoose.disconnect();
   await database?.stop();
+});
+
+test('inactive players can cancel reservations and release their slots', async () => {
+  const created = await request(app).post('/api/reservations').send(reservation()).expect(201);
+  await request(app)
+    .patch(`/api/players/${id(118)}`)
+    .send({ isActive: false })
+    .expect(200);
+  await request(app)
+    .patch(`/api/reservations/${created.body._id}`)
+    .send({ status: 'cancelled' })
+    .expect(200);
+  await request(app)
+    .post('/api/reservations')
+    .send(reservation({ playerId: id(119) }))
+    .expect(201);
+});
+
+test('scheduled matches can be cancelled after deactivation or court maintenance', async () => {
+  const court = await request(app)
+    .post('/api/courts')
+    .send({
+      name: 'Cancellation Court',
+      courtNumber: 99,
+      location: 'Test Club',
+      type: 'indoor',
+      openingTime: '06:00',
+      closingTime: '22:00',
+    })
+    .expect(201);
+  const match = await request(app)
+    .post('/api/matches')
+    .send({
+      courtId: court.body._id,
+      players: [id(118), id(119)],
+      playType: 'singles',
+      scheduledAt: new Date().toISOString(),
+    })
+    .expect(201);
+  await request(app)
+    .patch(`/api/players/${id(118)}`)
+    .send({ isActive: false })
+    .expect(200);
+  await request(app)
+    .patch(`/api/courts/${court.body._id}`)
+    .send({ status: 'maintenance' })
+    .expect(200);
+  await request(app)
+    .patch(`/api/matches/${match.body._id}`)
+    .send({ status: 'cancelled' })
+    .expect(200);
+});
+
+for (const queued of [false, true]) {
+  test(`${queued ? 'queued' : 'scheduled'} starts respect bookings, their holders, and opening hours`, async () => {
+    const match = queued
+      ? null
+      : await request(app)
+          .post('/api/matches')
+          .send({
+            courtId: id(200),
+            players: [id(102), id(103)],
+            playType: 'singles',
+            scheduledAt: new Date().toISOString(),
+          })
+          .expect(201);
+    if (queued)
+      await request(app)
+        .post(`/api/queue-entries/courts/${id(200)}/call-next`)
+        .expect(200);
+    const start = () =>
+      queued
+        ? request(app).post(`/api/queue-entries/courts/${id(200)}/start-match`)
+        : request(app).patch(`/api/matches/${match.body._id}`).send({ status: 'ongoing' });
+    const booking = await request(app)
+      .post('/api/reservations')
+      .send(
+        reservation({
+          startTime: '12:00',
+          endTime: '13:00',
+        }),
+      )
+      .expect(201);
+    const blocked = await start().expect(400);
+    assert.match(blocked.body.message, /reserved for another player/);
+    const court = await request(app)
+      .get(`/api/courts/${id(200)}`)
+      .expect(200);
+    assert.equal(court.body.status, 'available');
+    await request(app)
+      .patch(`/api/reservations/${booking.body._id}`)
+      .send({ playerId: id(102) })
+      .expect(200);
+    mock.timers.setTime(new Date('2026-10-04T21:00:00Z').getTime()); // 05:00 Manila
+    const closed = await start().expect(400);
+    assert.match(closed.body.message, /operating hours/);
+    mock.timers.setTime(new Date('2026-10-05T04:00:00Z').getTime());
+    await start().expect(queued ? 201 : 200);
+  });
+}
+
+test('next availability skips fully booked days and adjacent reservations', async () => {
+  const rows = [
+    { reservationDate: '2026-10-06', startTime: '06:00', endTime: '22:00' },
+    { reservationDate: '2026-10-07', startTime: '07:00', endTime: '09:00' },
+    { reservationDate: '2026-10-07', startTime: '06:00', endTime: '07:00' },
+  ];
+  assert.equal(nextFreeTime('06:00', '22:00', rows, '22:00'), '2026-10-07T09:00:00+08:00');
+  await request(app)
+    .post('/api/reservations')
+    .send(
+      reservation({
+        reservationDate: '2026-10-06',
+        startTime: '06:00',
+        endTime: '09:00',
+      }),
+    )
+    .expect(201);
+  mock.timers.setTime(new Date('2026-10-05T14:00:00Z').getTime());
+  const court = await request(app)
+    .get(`/api/courts/${id(200)}`)
+    .expect(200);
+  assert.equal(court.body.nextAvailableTime, '2026-10-06T09:00:00+08:00');
 });
 test('all read endpoints return real MongoDB records and populated relationships', async () => {
   const expected = { players: 20, courts: 6, reservations: 35, 'queue-entries': 14, matches: 47 };

@@ -37,14 +37,21 @@ export function localTime(value: Date) {
 export function nextFreeTime(
   openingTime: string,
   closingTime: string,
-  reservations: { startTime: string; endTime: string }[],
+  reservations: { reservationDate: string; startTime: string; endTime: string }[],
   fromTime: string,
+  fromDate = today(),
 ) {
+  let date = fromDate;
   let candidate = fromTime > openingTime ? fromTime : openingTime;
-  for (const row of reservations)
-    if (row.startTime <= candidate && row.endTime > candidate) candidate = row.endTime;
-  if (candidate < closingTime) return `${today()}T${candidate}:00+08:00`;
-  const nextDay = new Date(today() + 'T12:00:00Z');
-  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-  return `${nextDay.toISOString().slice(0, 10)}T${openingTime}:00+08:00`;
+  const sorted = [...reservations].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  for (;;) {
+    for (const row of sorted)
+      if (row.reservationDate === date && row.startTime <= candidate && row.endTime > candidate)
+        candidate = row.endTime;
+    if (candidate < closingTime) return `${date}T${candidate}:00+08:00`;
+    const nextDay = new Date(date + 'T12:00:00Z');
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    date = nextDay.toISOString().slice(0, 10);
+    candidate = openingTime;
+  }
 }

@@ -7,6 +7,7 @@ import { parse, queueSchema, validateId } from '../utils/validation.js';
 import { courtTransaction } from './courtLock.js';
 import { transition } from './transitions.js';
 import { lockActivePlayers } from './playerLock.js';
+import { checkMatchStart } from './availabilityService.js';
 export async function averageDuration(courtId?: string) {
   const rows = await Match.find({
     status: 'completed',
@@ -133,6 +134,7 @@ export async function startQueuedMatch(courtId: string) {
     }).session(session);
     assert(activePlayers === 2, 'Called players must be active.');
     const now = new Date();
+    await checkMatchStart(courtId, players.map(String), now, session);
     const match = new Match({
       courtId,
       players,

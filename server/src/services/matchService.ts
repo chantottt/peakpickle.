@@ -8,6 +8,7 @@ import { parse, matchSchema, resultSchema, validateId } from '../utils/validatio
 import { transition } from './transitions.js';
 import { courtTransaction } from './courtLock.js';
 import { lockActivePlayers } from './playerLock.js';
+import { checkMatchStart } from './availabilityService.js';
 export async function saveMatch(body: unknown, id?: string) {
   if (id) validateId(id);
   const input = id ? parse(matchSchema.partial(), body) : parse(matchSchema, body);
@@ -25,6 +26,15 @@ export async function saveMatch(body: unknown, id?: string) {
       );
       if (input.status) transition('match', oldStatus, input.status);
       assert(input.status !== 'completed', 'Record a match result to complete this match.');
+      if (input.status === 'cancelled') {
+        assert(
+          Object.keys(input).every((key) => key === 'status'),
+          'Cancel a match separately from editing its details.',
+        );
+        match.status = 'cancelled';
+        await match.save({ session });
+        return match.populate(['courtId', 'players']);
+      }
       match.set(input);
     } else assert(match.status === 'scheduled', 'New matches must be scheduled.');
     await lockActivePlayers(match.players.map(String), session);
@@ -54,6 +64,12 @@ export async function saveMatch(body: unknown, id?: string) {
         'A selected player is already playing.',
       );
       match.startedAt = new Date();
+      await checkMatchStart(
+        String(match.courtId),
+        match.players.map(String),
+        match.startedAt,
+        session,
+      );
       court.status = 'occupied';
       await court.save({ session });
     }
