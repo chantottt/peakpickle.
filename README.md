@@ -30,7 +30,6 @@ The DOCX's repository section requests separate client/server repositories, whil
 - FCFS live queue with dynamic positions, average duration, estimated waits, call-next, start, skip, leave, and complete through score recording.
 - Live elapsed queue wait indicators and singles/doubles queue groups; the UI defaults to doubles.
 - My Activity player selector brings upcoming reservations, active queue entries, and upcoming/ongoing matches together.
-- Add to calendar downloads (.ics) for active reservations and scheduled matches, using Manila booking times converted to UTC. Calendar files are snapshots, not automatic subscriptions; matches have no fixed end time.
 - Player CRUD, active status, skill/play/time preferences, profiles, and match history.
 - Matching scored exactly as requested: same skill 60, compatible availability 30, same preferred play 10.
 - Singles/doubles scheduling, start/cancel transitions, scorecards, validated results, automatically derived winners, and ranking updates.

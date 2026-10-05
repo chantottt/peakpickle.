@@ -17,8 +17,6 @@ import {
 } from '../components/ui';
 import { MatchForm, ResultForm } from '../components/ui/EntityForms';
 import { capitalize, dateLabel, timeLabel, teamNames } from '../utils/format';
-import { CalendarButton } from '../components/ui/CalendarButton';
-import { matchEvent } from '../utils/calendar';
 export function MatchDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -53,7 +51,6 @@ export function MatchDetailPage() {
               <div className="page-actions">
                 {match.status === 'scheduled' && (
                   <>
-                    <CalendarButton event={matchEvent(match)} />
                     <Button variant="secondary" onClick={() => setEdit(true)}>
                       <Pencil size={15} />
                       Edit Match

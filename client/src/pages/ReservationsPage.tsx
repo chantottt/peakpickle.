@@ -20,8 +20,6 @@ import {
   Modal,
 } from '../components/ui';
 import { queryString, capitalize, dateLabel, timeLabel } from '../utils/format';
-import { CalendarButton } from '../components/ui/CalendarButton';
-import { reservationEvent } from '../utils/calendar';
 export function ReservationsPage() {
   const [params] = useSearchParams();
   const [search, setSearch] = useState('');
@@ -193,9 +191,6 @@ export function ReservationsPage() {
             </div>
           </dl>
           <div className="form-actions">
-            {['pending', 'confirmed'].includes(view.status) && (
-              <CalendarButton event={reservationEvent(view)} />
-            )}
             <Button variant="secondary" onClick={() => setView(null)}>
               Close
             </Button>

@@ -14,11 +14,9 @@ import {
   StatCard,
   StatusBadge,
 } from '../components/ui';
-import { CalendarButton } from '../components/ui/CalendarButton';
 import { WaitIndicator } from '../components/queue/WaitIndicator';
 import { MatchCard } from '../components/matches/MatchCard';
 import { dateLabel, timeLabel } from '../utils/format';
-import { reservationEvent } from '../utils/calendar';
 
 export function ActivityPage() {
   const [params, setParams] = useSearchParams();
@@ -173,7 +171,6 @@ export function ActivityPage() {
                       <StatusBadge status={row.status} />
                     </div>
                     <div className="page-actions">
-                      <CalendarButton event={reservationEvent(row)} />
                       <Link
                         className="button button-secondary"
                         to={`/reservations/${row._id}/edit`}
@@ -217,10 +214,7 @@ export function ActivityPage() {
                 </Card>
               )}
             </section>
-            <p className="table-footnote">
-              All times are in Asia/Manila. Calendar downloads are a snapshot; download again after
-              schedule changes.
-            </p>
+            <p className="table-footnote">All times are in Asia/Manila.</p>
           </>
         )}
       </DataState>

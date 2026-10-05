@@ -3,8 +3,6 @@ import { CalendarDays, MapPin } from 'lucide-react';
 import type { Match } from '../../types';
 import { Avatar, Button, StatusBadge } from '../ui';
 import { dateLabel, timeLabel, teamNames, capitalize } from '../../utils/format';
-import { CalendarButton } from '../ui/CalendarButton';
-import { matchEvent } from '../../utils/calendar';
 export function MatchCard({
   match,
   onStart,
@@ -62,7 +60,6 @@ export function MatchCard({
       <div className="match-actions">
         <StatusBadge status={match.status} />
         <div>
-          {match.status === 'scheduled' && <CalendarButton event={matchEvent(match)} />}
           {match.status === 'scheduled' && onStart && (
             <Button busy={busy} onClick={onStart}>
               Start Match
