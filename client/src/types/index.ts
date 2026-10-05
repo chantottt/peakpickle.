@@ -59,6 +59,7 @@ export interface Match {
   result?: MatchResult | null;
 }
 export interface QueueEntry {
+  playType?: 'singles' | 'doubles';
   _id: string;
   playerId: Player;
   courtId: string;

@@ -17,14 +17,17 @@ import {
   Avatar,
   Badge,
   StatusBadge,
+  Select,
 } from '../components/ui';
 import { JoinQueueForm, ResultForm } from '../components/ui/EntityForms';
 import { QueueCard } from '../components/queue/QueueCard';
 import { timeLabel } from '../utils/format';
+import { WaitIndicator } from '../components/queue/WaitIndicator';
 export function QueuePage() {
   const [params] = useSearchParams();
   const [selected, setSelected] = useState(params.get('court') || '');
   const [join, setJoin] = useState(false);
+  const [preferredPlayType, setPreferredPlayType] = useState('doubles');
   const [result, setResult] = useState<Match | null>(null);
   const state = useLiveQueue();
   const players = useApi<Player[]>('/players');
@@ -33,6 +36,9 @@ export function QueuePage() {
   const courtId = summary?.court._id;
   const waiting = summary?.entries.filter((entry) => entry.status !== 'playing') || [];
   const calledCount = waiting.filter((entry) => entry.status === 'called').length;
+  const calledEntry = waiting.find((entry) => entry.status === 'called');
+  const playType = calledEntry ? calledEntry.playType || 'singles' : preferredPlayType;
+  const groupSize = playType === 'doubles' ? 4 : 2;
   const firstWaiting = waiting.find((entry) => entry.status === 'waiting');
   const refresh = () => {
     void state.refetch();
@@ -124,18 +130,27 @@ export function QueuePage() {
                 Waiting Queue <Badge>{waiting.length}</Badge>
               </h2>
               <div>
+                <Select
+                  aria-label="Queue play type"
+                  value={playType}
+                  disabled={calledCount > 0 || mutation.busy}
+                  onChange={(event) => setPreferredPlayType(event.target.value)}
+                >
+                  <option value="doubles">Doubles · 4 players</option>
+                  <option value="singles">Singles · 2 players</option>
+                </Select>
                 <Button
                   variant="secondary"
                   busy={mutation.busy}
                   disabled={
                     summary.court.status === 'maintenance' ||
                     calledCount > 0 ||
-                    waiting.filter((entry) => entry.status === 'waiting').length < 2
+                    waiting.filter((entry) => entry.status === 'waiting').length < groupSize
                   }
                   onClick={() =>
                     mutation.run(
-                      () => api.post(`/queue-entries/courts/${courtId}/call-next`),
-                      'Next two players called.',
+                      () => api.post(`/queue-entries/courts/${courtId}/call-next`, { playType }),
+                      `Next ${groupSize} players called.`,
                       refresh,
                     )
                   }
@@ -145,7 +160,7 @@ export function QueuePage() {
                 </Button>
                 <Button
                   busy={mutation.busy}
-                  disabled={calledCount !== 2 || summary.court.status !== 'available'}
+                  disabled={calledCount !== groupSize || summary.court.status !== 'available'}
                   onClick={() =>
                     mutation.run(
                       () => api.post(`/queue-entries/courts/${courtId}/start-match`),
@@ -165,6 +180,13 @@ export function QueuePage() {
                 )}
               </div>
             </div>
+            <p className="table-footnote">
+              {playType === 'doubles'
+                ? 'Doubles: first two called players form Team A; next two form Team B.'
+                : 'Singles: one player on each side.'}{' '}
+              {calledCount > 0 &&
+                `${calledCount} of ${groupSize} players called. Skip a player and call the next waiter to replace them.`}
+            </p>
             {waiting.length ? (
               <Table
                 headers={['Position', 'Player', 'Joined At', 'Estimated Wait', 'Status', 'Actions']}
@@ -188,7 +210,10 @@ export function QueuePage() {
                           </div>
                         </div>
                       </td>
-                      <td data-label="Joined At">{timeLabel(entry.joinedAt)}</td>
+                      <td data-label="Joined At">
+                        {timeLabel(entry.joinedAt)}
+                        <WaitIndicator joinedAt={entry.joinedAt} />
+                      </td>
                       <td data-label="Estimated Wait">
                         <strong>
                           {entry.status === 'called' ? 'Your turn' : `~ ${entry.estimatedWait} min`}
@@ -206,7 +231,7 @@ export function QueuePage() {
                                 busy={mutation.busy}
                                 disabled={
                                   firstWaiting?._id !== entry._id ||
-                                  calledCount >= 2 ||
+                                  calledCount >= groupSize ||
                                   summary.court.status === 'maintenance'
                                 }
                                 onClick={() =>
@@ -214,6 +239,7 @@ export function QueuePage() {
                                     () =>
                                       api.patch(`/queue-entries/${entry._id}`, {
                                         status: 'called',
+                                        playType,
                                       }),
                                     'Player called to court.',
                                     refresh,

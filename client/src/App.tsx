@@ -3,6 +3,9 @@ import { Route, Routes, Link } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { LandingPage } from './pages/LandingPage';
 import { EmptyState, Skeleton } from './components/ui';
+const ActivityPage = lazy(() =>
+  import('./pages/ActivityPage').then((module) => ({ default: module.ActivityPage })),
+);
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })),
 );
@@ -55,6 +58,7 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
           <Route path="/courts" element={<CourtsPage />} />
           <Route path="/courts/:id" element={<CourtDetailPage />} />
           <Route path="/reservations" element={<ReservationsPage />} />

@@ -86,8 +86,9 @@ export async function joinQueue(body: unknown) {
     return entry.populate('playerId');
   });
 }
-export async function callNext(courtId: string) {
+export async function callNext(courtId: string, playType: 'singles' | 'doubles' = 'singles') {
   validateId(courtId);
+  const size = playType === 'doubles' ? 4 : 2;
   return courtTransaction([courtId], async (session) => {
     const court = await Court.findById(courtId).session(session);
     assert(court && court.status !== 'maintenance', 'Court is under maintenance.');
@@ -97,10 +98,11 @@ export async function callNext(courtId: string) {
     );
     const entries = await QueueEntry.find({ courtId, status: 'waiting' })
       .sort({ joinedAt: 1, _id: 1 })
-      .limit(2)
+      .limit(size)
       .session(session);
-    assert(entries.length === 2, 'At least two waiting players are needed for singles.');
+    assert(entries.length === size, `At least ${size} waiting players are needed for ${playType}.`);
     for (const entry of entries) {
+      entry.playType = playType;
       entry.status = 'called';
       entry.calledAt = new Date();
       await entry.save({ session });
@@ -119,9 +121,14 @@ export async function startQueuedMatch(courtId: string) {
     );
     const entries = await QueueEntry.find({ courtId, status: 'called' })
       .sort({ joinedAt: 1, _id: 1 })
-      .limit(2)
       .session(session);
-    assert(entries.length === 2, 'Call the next two players first.');
+    const playType = entries[0]?.playType || 'singles';
+    const size = playType === 'doubles' ? 4 : 2;
+    assert(entries.length === size, `Call ${size} players for ${playType} first.`);
+    assert(
+      entries.every((entry) => (entry.playType || 'singles') === playType),
+      'Called players must use the same play type.',
+    );
     const players = entries.map((entry) => entry.playerId);
     await lockActivePlayers(players.map(String), session);
     assert(
@@ -132,13 +139,13 @@ export async function startQueuedMatch(courtId: string) {
       _id: { $in: players },
       isActive: true,
     }).session(session);
-    assert(activePlayers === 2, 'Called players must be active.');
+    assert(activePlayers === size, 'Called players must be active.');
     const now = new Date();
     await checkMatchStart(courtId, players.map(String), now, session);
     const match = new Match({
       courtId,
       players,
-      playType: 'singles',
+      playType,
       status: 'ongoing',
       scheduledAt: now,
       startedAt: now,
@@ -158,6 +165,7 @@ export async function startQueuedMatch(courtId: string) {
 export async function changeQueueEntry(
   id: string,
   status: 'called' | 'playing' | 'completed' | 'cancelled' | 'skipped',
+  requestedPlayType?: 'singles' | 'doubles',
 ) {
   validateId(id);
   const old = await QueueEntry.findById(id);
@@ -174,12 +182,19 @@ export async function changeQueueEntry(
         .sort({ joinedAt: 1, _id: 1 })
         .session(session);
       assert(String(first?._id) === id, 'Call players in first-come-first-served order.');
-      assert(
-        (await QueueEntry.countDocuments({ courtId: entry.courtId, status: 'called' }).session(
-          session,
-        )) < 2,
-        'Two players are already called.',
+      const called = await QueueEntry.find({ courtId: entry.courtId, status: 'called' }).session(
+        session,
       );
+      const playType = called.length
+        ? called[0].playType || 'singles'
+        : requestedPlayType || 'singles';
+      assert(
+        !requestedPlayType || requestedPlayType === playType,
+        'Finish the current called group before changing play type.',
+      );
+      const size = playType === 'doubles' ? 4 : 2;
+      assert(called.length < size, `${size} players are already called.`);
+      entry.playType = playType;
       entry.calledAt = new Date();
     }
     entry.status = status;

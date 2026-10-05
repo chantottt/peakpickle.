@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 import { QueueEntry } from '../models/QueueEntry.js';
 import { assert } from '../utils/errors.js';
-import { parse, queuePatchSchema, validateId } from '../utils/validation.js';
+import { parse, queuePatchSchema, queueCallSchema, validateId } from '../utils/validation.js';
 import {
   joinQueue,
   queueSummary,
@@ -27,8 +27,8 @@ export const summary: RequestHandler = async (req, res) =>
 export const create: RequestHandler = async (req, res) =>
   res.status(201).json(await joinQueue(req.body));
 export const update: RequestHandler = async (req, res) => {
-  const { status } = parse(queuePatchSchema, req.body);
-  res.json(await changeQueueEntry(String(req.params.id), status));
+  const { status, playType } = parse(queuePatchSchema, req.body);
+  res.json(await changeQueueEntry(String(req.params.id), status, playType));
 };
 export const remove: RequestHandler = async (req, res) => {
   const id = validateId(String(req.params.id));
@@ -45,7 +45,9 @@ export const remove: RequestHandler = async (req, res) => {
   });
   res.json({ message: 'Queue entry deleted successfully.' });
 };
-export const call: RequestHandler = async (req, res) =>
-  res.json(await callNext(String(req.params.courtId)));
+export const call: RequestHandler = async (req, res) => {
+  const { playType } = parse(queueCallSchema, req.body || {});
+  res.json(await callNext(String(req.params.courtId), playType));
+};
 export const start: RequestHandler = async (req, res) =>
   res.status(201).json(await startQueuedMatch(String(req.params.courtId)));

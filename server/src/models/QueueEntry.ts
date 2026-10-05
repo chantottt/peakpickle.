@@ -10,6 +10,7 @@ const schema = new Schema(
     },
     joinedAt: { type: Date, default: Date.now },
     calledAt: Date,
+    playType: { type: String, enum: ['singles', 'doubles'], default: 'singles' },
     startedAt: Date,
     completedAt: Date,
   },

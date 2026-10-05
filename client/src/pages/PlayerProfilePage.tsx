@@ -48,6 +48,10 @@ export function PlayerProfilePage() {
                   <p>{player.email}</p>
                 </div>
                 <div className="profile-actions">
+                  <Link className="button button-secondary" to={`/activity?player=${player._id}`}>
+                    <Activity size={15} />
+                    My Activity
+                  </Link>
                   <Button variant="secondary" onClick={() => setEdit(true)}>
                     <Pencil size={15} />
                     Edit Profile

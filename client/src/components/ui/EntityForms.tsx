@@ -262,7 +262,7 @@ export function MatchForm({
           playerThree: match.players[2]?._id || '',
           playerFour: match.players[3]?._id || '',
         }
-      : { playType: 'singles', scheduledAt: today() + 'T18:00', playerThree: '', playerFour: '' },
+      : { playType: 'doubles', scheduledAt: today() + 'T18:00', playerThree: '', playerFour: '' },
   });
   const playType = watch('playType');
   const submit = async (values: MatchFormValues) => {

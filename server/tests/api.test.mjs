@@ -160,6 +160,69 @@ test('next availability skips fully booked days and adjacent reservations', asyn
     .expect(200);
   assert.equal(court.body.nextAvailableTime, '2026-10-06T09:00:00+08:00');
 });
+test('doubles queue preserves four-player groups through skips and result recording', async () => {
+  const called = await request(app)
+    .post(`/api/queue-entries/courts/${id(200)}/call-next`)
+    .send({ playType: 'doubles' })
+    .expect(200);
+  assert.deepEqual(
+    called.body.map((row) => row._id),
+    [id(602), id(603), id(604), id(605)],
+  );
+  await request(app)
+    .patch(`/api/queue-entries/${id(602)}`)
+    .send({ status: 'skipped' })
+    .expect(200);
+  await request(app)
+    .post(`/api/queue-entries/courts/${id(200)}/start-match`)
+    .expect(400);
+  await request(app)
+    .patch(`/api/queue-entries/${id(606)}`)
+    .send({ status: 'called', playType: 'singles' })
+    .expect(400);
+  await request(app)
+    .patch(`/api/queue-entries/${id(606)}`)
+    .send({ status: 'called', playType: 'doubles' })
+    .expect(200);
+  const match = await request(app)
+    .post(`/api/queue-entries/courts/${id(200)}/start-match`)
+    .expect(201);
+  assert.equal(match.body.playType, 'doubles');
+  assert.deepEqual(
+    match.body.players.map((player) => player._id),
+    [id(103), id(104), id(105), id(106)],
+  );
+  const result = await request(app)
+    .post('/api/match-results')
+    .send({ matchId: match.body._id, teamOneScore: 11, teamTwoScore: 8 })
+    .expect(201);
+  assert.deepEqual(result.body.winnerPlayerIds, [id(103), id(104)]);
+  const completed = await request(app)
+    .get(`/api/queue-entries?courtId=${id(200)}&status=completed`)
+    .expect(200);
+  assert.equal(completed.body.length, 4);
+});
+
+test('queue rejects unsupported play types and insufficient doubles players', async () => {
+  await request(app)
+    .post(`/api/queue-entries/courts/${id(200)}/call-next`)
+    .send({ playType: 'triples' })
+    .expect(400);
+  await request(app)
+    .post(`/api/queue-entries/courts/${id(203)}/call-next`)
+    .send({ playType: 'doubles' })
+    .expect(400);
+});
+
+test('activity match filter only returns the selected player’s matches', async () => {
+  const response = await request(app)
+    .get(`/api/matches?playerId=${id(114)}`)
+    .expect(200);
+  assert.ok(response.body.length > 0);
+  assert.ok(response.body.every((match) => match.players.some((player) => player._id === id(114))));
+  await request(app).get('/api/matches?playerId=invalid').expect(400);
+});
+
 test('all read endpoints return real MongoDB records and populated relationships', async () => {
   const expected = { players: 20, courts: 6, reservations: 35, 'queue-entries': 14, matches: 47 };
   for (const [resource, count] of Object.entries(expected)) {

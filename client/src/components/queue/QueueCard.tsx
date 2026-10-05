@@ -50,7 +50,7 @@ export function QueueCard({ summary }: { summary: QueueSummary }) {
           <p className="muted">
             {summary.court.status === 'maintenance'
               ? 'Choose another court to join the queue.'
-              : 'Call the next two players and let’s play.'}
+              : 'Choose singles or doubles, then call the next players.'}
           </p>
         </div>
       )}

@@ -45,7 +45,13 @@ export const reservationSchema = z
   .strict();
 export const queueSchema = z.object({ playerId: id, courtId: id }).strict();
 export const queuePatchSchema = z
-  .object({ status: z.enum(['called', 'playing', 'completed', 'cancelled', 'skipped']) })
+  .object({
+    status: z.enum(['called', 'playing', 'completed', 'cancelled', 'skipped']),
+    playType: z.enum(['singles', 'doubles']).optional(),
+  })
+  .strict();
+export const queueCallSchema = z
+  .object({ playType: z.enum(['singles', 'doubles']).default('singles') })
   .strict();
 export const matchSchema = z
   .object({

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
+  UserRound,
   Grid2X2,
   CalendarDays,
   ListOrdered,
@@ -20,6 +21,7 @@ import { Avatar, Button, Modal } from '../ui';
 import { dateLabel, today } from '../../utils/format';
 const items = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/activity', label: 'My Activity', icon: UserRound },
   { to: '/courts', label: 'Courts', icon: Grid2X2 },
   { to: '/reservations', label: 'Reservations', icon: CalendarDays },
   { to: '/queue', label: 'Live Queue', icon: ListOrdered },

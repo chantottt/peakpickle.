@@ -7,6 +7,7 @@ import { matchesWithResults, saveMatch, recordResult } from '../services/matchSe
 import { courtTransaction } from '../services/courtLock.js';
 export const list: RequestHandler = async (req, res) => {
   const filter = {
+    ...(req.query.playerId ? { players: validateId(String(req.query.playerId)) } : {}),
     ...(req.query.status ? { status: String(req.query.status) } : {}),
     ...(req.query.playType ? { playType: String(req.query.playType) } : {}),
     ...(req.query.courtId ? { courtId: validateId(String(req.query.courtId)) } : {}),
