@@ -1,3 +1,4 @@
+import { currentTime } from '../utils/time.js';
 import { Match } from '../models/Match.js';
 import { MatchResult } from '../models/MatchResult.js';
 import { Player } from '../models/Player.js';
@@ -63,7 +64,7 @@ export async function saveMatch(body: unknown, id?: string) {
         }).session(session)),
         'A selected player is already playing.',
       );
-      match.startedAt = new Date();
+      match.startedAt = currentTime();
       await checkMatchStart(
         String(match.courtId),
         match.players.map(String),
@@ -103,7 +104,7 @@ export async function recordResult(body: unknown) {
     const result = new MatchResult({ ...input, winnerPlayerIds: winners });
     await result.save({ session });
     match.status = 'completed';
-    match.completedAt = new Date();
+    match.completedAt = currentTime();
     await match.save({ session });
     await Court.updateOne({ _id: match.courtId }, { status: 'available' }, { session });
     await QueueEntry.updateMany(

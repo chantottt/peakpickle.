@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ListOrdered, Plus, Play, CheckCircle2, SkipForward, LogOut } from 'lucide-react';
@@ -24,6 +25,8 @@ import { QueueCard } from '../components/queue/QueueCard';
 import { timeLabel } from '../utils/format';
 import { WaitIndicator } from '../components/queue/WaitIndicator';
 export function QueuePage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const [params] = useSearchParams();
   const [selected, setSelected] = useState(params.get('court') || '');
   const [join, setJoin] = useState(false);
@@ -129,56 +132,58 @@ export function QueuePage() {
               <h2>
                 Waiting Queue <Badge>{waiting.length}</Badge>
               </h2>
-              <div>
-                <Select
-                  aria-label="Queue play type"
-                  value={playType}
-                  disabled={calledCount > 0 || mutation.busy}
-                  onChange={(event) => setPreferredPlayType(event.target.value)}
-                >
-                  <option value="doubles">Doubles · 4 players</option>
-                  <option value="singles">Singles · 2 players</option>
-                </Select>
-                <Button
-                  variant="secondary"
-                  busy={mutation.busy}
-                  disabled={
-                    summary.court.status === 'maintenance' ||
-                    calledCount > 0 ||
-                    waiting.filter((entry) => entry.status === 'waiting').length < groupSize
-                  }
-                  onClick={() =>
-                    mutation.run(
-                      () => api.post(`/queue-entries/courts/${courtId}/call-next`, { playType }),
-                      `Next ${groupSize} players called.`,
-                      refresh,
-                    )
-                  }
-                >
-                  <ListOrdered size={16} />
-                  Call Next
-                </Button>
-                <Button
-                  busy={mutation.busy}
-                  disabled={calledCount !== groupSize || summary.court.status !== 'available'}
-                  onClick={() =>
-                    mutation.run(
-                      () => api.post(`/queue-entries/courts/${courtId}/start-match`),
-                      'Match started successfully.',
-                      refresh,
-                    )
-                  }
-                >
-                  <Play size={15} />
-                  Start Match
-                </Button>
-                {summary.currentMatch && (
-                  <Button onClick={() => setResult(summary.currentMatch)}>
-                    <CheckCircle2 size={16} />
-                    Complete
+              {admin && (
+                <div>
+                  <Select
+                    aria-label="Queue play type"
+                    value={playType}
+                    disabled={calledCount > 0 || mutation.busy}
+                    onChange={(event) => setPreferredPlayType(event.target.value)}
+                  >
+                    <option value="doubles">Doubles · 4 players</option>
+                    <option value="singles">Singles · 2 players</option>
+                  </Select>
+                  <Button
+                    variant="secondary"
+                    busy={mutation.busy}
+                    disabled={
+                      summary.court.status === 'maintenance' ||
+                      calledCount > 0 ||
+                      waiting.filter((entry) => entry.status === 'waiting').length < groupSize
+                    }
+                    onClick={() =>
+                      mutation.run(
+                        () => api.post(`/queue-entries/courts/${courtId}/call-next`, { playType }),
+                        `Next ${groupSize} players called.`,
+                        refresh,
+                      )
+                    }
+                  >
+                    <ListOrdered size={16} />
+                    Call Next
                   </Button>
-                )}
-              </div>
+                  <Button
+                    busy={mutation.busy}
+                    disabled={calledCount !== groupSize || summary.court.status !== 'available'}
+                    onClick={() =>
+                      mutation.run(
+                        () => api.post(`/queue-entries/courts/${courtId}/start-match`),
+                        'Match started successfully.',
+                        refresh,
+                      )
+                    }
+                  >
+                    <Play size={15} />
+                    Start Match
+                  </Button>
+                  {summary.currentMatch && (
+                    <Button onClick={() => setResult(summary.currentMatch)}>
+                      <CheckCircle2 size={16} />
+                      Complete
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <p className="table-footnote">
               {playType === 'doubles'
@@ -224,50 +229,53 @@ export function QueuePage() {
                       </td>
                       <td data-label="Actions">
                         <div className="row-actions">
-                          {entry.status === 'waiting' && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                busy={mutation.busy}
-                                disabled={
-                                  firstWaiting?._id !== entry._id ||
-                                  calledCount >= groupSize ||
-                                  summary.court.status === 'maintenance'
-                                }
-                                onClick={() =>
-                                  mutation.run(
-                                    () =>
-                                      api.patch(`/queue-entries/${entry._id}`, {
-                                        status: 'called',
-                                        playType,
-                                      }),
-                                    'Player called to court.',
-                                    refresh,
-                                  )
-                                }
-                              >
-                                Call
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                busy={mutation.busy}
-                                onClick={() =>
-                                  mutation.run(
-                                    () =>
-                                      api.patch(`/queue-entries/${entry._id}`, {
-                                        status: 'cancelled',
-                                      }),
-                                    'Player left the queue.',
-                                    refresh,
-                                  )
-                                }
-                              >
-                                <LogOut size={13} />
-                                Leave
-                              </Button>
-                            </>
-                          )}
-                          {entry.status === 'called' && (
+                          {entry.status === 'waiting' &&
+                            (admin || entry.playerId._id === account?.playerId) && (
+                              <>
+                                {admin && (
+                                  <Button
+                                    variant="ghost"
+                                    busy={mutation.busy}
+                                    disabled={
+                                      firstWaiting?._id !== entry._id ||
+                                      calledCount >= groupSize ||
+                                      summary.court.status === 'maintenance'
+                                    }
+                                    onClick={() =>
+                                      mutation.run(
+                                        () =>
+                                          api.patch(`/queue-entries/${entry._id}`, {
+                                            status: 'called',
+                                            playType,
+                                          }),
+                                        'Player called to court.',
+                                        refresh,
+                                      )
+                                    }
+                                  >
+                                    Call
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="secondary"
+                                  busy={mutation.busy}
+                                  onClick={() =>
+                                    mutation.run(
+                                      () =>
+                                        api.patch(`/queue-entries/${entry._id}`, {
+                                          status: 'cancelled',
+                                        }),
+                                      'Player left the queue.',
+                                      refresh,
+                                    )
+                                  }
+                                >
+                                  <LogOut size={13} />
+                                  Leave
+                                </Button>
+                              </>
+                            )}
+                          {admin && entry.status === 'called' && (
                             <Button
                               variant="secondary"
                               busy={mutation.busy}

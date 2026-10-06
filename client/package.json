@@ -7,7 +7,7 @@
     "dev": "vite --configLoader native --host 127.0.0.1",
     "build": "tsc -b && vite build --configLoader native",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview --configLoader native --host 127.0.0.1"
+    "preview": "vite preview --configLoader native --host 127.0.0.1 --port 5173 --strictPort"
   },
   "dependencies": {
     "react": "^19.2.0",

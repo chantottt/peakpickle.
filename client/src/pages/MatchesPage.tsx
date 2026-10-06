@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
@@ -17,6 +18,8 @@ import { MatchForm, ResultForm } from '../components/ui/EntityForms';
 import { MatchCard } from '../components/matches/MatchCard';
 import { capitalize, queryString } from '../utils/format';
 export function MatchesPage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [playType, setPlay] = useState('');
@@ -30,10 +33,12 @@ export function MatchesPage() {
         title="Matches"
         description="Every rally has a story. Keep track of yours."
         action={
-          <Button onClick={() => setCreate(true)}>
-            <Plus size={17} />
-            New Match
-          </Button>
+          admin && (
+            <Button onClick={() => setCreate(true)}>
+              <Plus size={17} />
+              New Match
+            </Button>
+          )
         }
       />
       <div className="filters">
@@ -61,14 +66,17 @@ export function MatchesPage() {
               key={match._id}
               match={match}
               busy={mutation.busy}
-              onStart={() =>
-                mutation.run(
-                  () => api.patch(`/matches/${match._id}`, { status: 'ongoing' }),
-                  'Match started successfully.',
-                  () => void state.refetch(),
-                )
+              onStart={
+                admin
+                  ? () =>
+                      mutation.run(
+                        () => api.patch(`/matches/${match._id}`, { status: 'ongoing' }),
+                        'Match started successfully.',
+                        () => void state.refetch(),
+                      )
+                  : undefined
               }
-              onResult={() => setResult(match)}
+              onResult={admin ? () => setResult(match) : undefined}
             />
           ))}
         </div>
@@ -76,7 +84,7 @@ export function MatchesPage() {
           <EmptyState
             title="No matches found"
             description="Try a different filter or schedule your next match."
-            action={<Button onClick={() => setCreate(true)}>New Match</Button>}
+            action={admin && <Button onClick={() => setCreate(true)}>New Match</Button>}
           />
         )}
       </DataState>

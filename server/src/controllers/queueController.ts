@@ -12,6 +12,7 @@ import {
 import { courtTransaction } from '../services/courtLock.js';
 export const list: RequestHandler = async (req, res) => {
   const filter = {
+    ...(req.account?.role === 'member' ? { playerId: req.account.playerId } : {}),
     ...(req.query.courtId ? { courtId: validateId(String(req.query.courtId)) } : {}),
     ...(req.query.status ? { status: String(req.query.status) } : {}),
   };

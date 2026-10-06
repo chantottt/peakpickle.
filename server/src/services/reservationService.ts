@@ -5,7 +5,7 @@ import { transition } from './transitions.js';
 import { courtTransaction } from './courtLock.js';
 import { checkReservation } from './availabilityService.js';
 import { lockActivePlayers } from './playerLock.js';
-export async function saveReservation(body: unknown, id?: string) {
+export async function saveReservation(body: unknown, id?: string, owner?: string) {
   if (id) validateId(id);
   const input = id ? parse(reservationSchema.partial(), body) : parse(reservationSchema, body);
   const previous = id ? await Reservation.findById(id) : null;
@@ -17,6 +17,15 @@ export async function saveReservation(body: unknown, id?: string) {
       const record = id ? await Reservation.findById(id).session(session) : new Reservation(input);
       assert(record, 'Record not found', 404);
       if (id) {
+        if (owner) {
+          assert(String(record.playerId) === owner, 'Record not found', 404);
+          assert(
+            record.status !== 'confirmed' ||
+              (Object.keys(input).every((key) => key === 'status') && input.status === 'cancelled'),
+            'Confirmed bookings can only be cancelled',
+            403,
+          );
+        }
         assert(
           !['completed', 'cancelled'].includes(record.status) ||
             Object.keys(input).every((key) => key === 'status'),

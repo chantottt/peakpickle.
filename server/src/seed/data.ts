@@ -1,3 +1,5 @@
+import { currentTime } from '../utils/time.js';
+import { User } from '../models/User.js';
 import { Types } from 'mongoose';
 import { Player } from '../models/Player.js';
 import { Court } from '../models/Court.js';
@@ -7,8 +9,15 @@ import { Match } from '../models/Match.js';
 import { MatchResult } from '../models/MatchResult.js';
 import { today } from '../utils/time.js';
 export const seedId = (value: number) => new Types.ObjectId(value.toString(16).padStart(24, '0'));
-export async function seedData() {
-  // Only these application's six collections are replaced, never the database itself.
+export async function seedData(resetUsers = false) {
+  // Refuse to orphan account links; explicit demo resets remove accounts too.
+  if (await User.exists({})) {
+    if (!resetUsers)
+      throw new Error(
+        'Accounts exist. Seeding refused. Use --reset-users with --confirm only for an authorized destructive demo reset.',
+      );
+    await User.deleteMany({});
+  }
   await MatchResult.deleteMany({});
   await QueueEntry.deleteMany({});
   await Match.deleteMany({});
@@ -116,7 +125,7 @@ export async function seedData() {
           : match.players.slice(0, match.players.length / 2),
     })),
   );
-  const now = new Date();
+  const now = currentTime();
   const queueRows = Array.from({ length: 14 }, (_, index) => ({
     _id: seedId(600 + index),
     playerId: seedId(100 + index),

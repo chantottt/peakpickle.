@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+import { demoAccounts } from './accounts.js';
 import { fileURLToPath } from 'node:url';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
@@ -11,9 +13,11 @@ const database = await MongoMemoryReplSet.create({
   replSet: { count: 1 },
   binary: { version: '7.0.24' },
 });
+process.env.JWT_SECRET = randomBytes(48).toString('hex');
 await connectDatabase(database.getUri('peakpickle_demo'));
 console.log(await seedData());
-const server = app.listen(5000, '127.0.0.1', () =>
+await demoAccounts();
+const server = app.listen(5000, () =>
   console.log(
     'Temporary MongoDB demo API at http://127.0.0.1:5000/api. Data resets when stopped. Atlas mode: npm run dev:server.',
   ),

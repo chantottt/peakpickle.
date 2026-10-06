@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Pencil, Trash2, Swords, Trophy, TrendingUp, Activity } from 'lucide-react';
@@ -20,6 +21,8 @@ import {
 import { PlayerForm } from '../components/ui/EntityForms';
 import { capitalize, dateLabel } from '../utils/format';
 export function PlayerProfilePage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const { id } = useParams();
   const state = useApi<Player>(`/players/${id}`);
   const navigate = useNavigate();
@@ -29,7 +32,7 @@ export function PlayerProfilePage() {
   const player = state.data;
   return (
     <>
-      <Link className="back-link" to="/players">
+      <Link className="back-link" to={admin ? '/players' : '/member/dashboard'}>
         <ArrowLeft size={15} />
         Back to Players
       </Link>
@@ -48,21 +51,27 @@ export function PlayerProfilePage() {
                   <p>{player.email}</p>
                 </div>
                 <div className="profile-actions">
-                  <Link className="button button-secondary" to={`/activity?player=${player._id}`}>
-                    <Activity size={15} />
-                    My Activity
-                  </Link>
-                  <Button variant="secondary" onClick={() => setEdit(true)}>
-                    <Pencil size={15} />
-                    Edit Profile
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    aria-label="Delete player"
-                    onClick={() => setRemove(true)}
-                  >
-                    <Trash2 size={17} />
-                  </Button>
+                  {(admin || account?.playerId === player._id) && (
+                    <Link className="button button-secondary" to={`/activity?player=${player._id}`}>
+                      <Activity size={15} />
+                      My Activity
+                    </Link>
+                  )}
+                  {(admin || account?.playerId === player._id) && (
+                    <Button variant="secondary" onClick={() => setEdit(true)}>
+                      <Pencil size={15} />
+                      Edit Profile
+                    </Button>
+                  )}
+                  {admin && (
+                    <Button
+                      variant="ghost"
+                      aria-label="Delete player"
+                      onClick={() => setRemove(true)}
+                    >
+                      <Trash2 size={17} />
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>

@@ -1,3 +1,4 @@
+import { useAuth } from '../../auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api, errorMessage } from '../../services/api';
@@ -49,6 +50,7 @@ export function PlayerForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { account } = useAuth();
   const toast = useToast();
   const {
     register,
@@ -75,8 +77,10 @@ export function PlayerForm({
   });
   const submit = async (values: PlayerFormValues) => {
     try {
-      if (player) await api.patch(`/players/${player._id}`, values);
-      else await api.post('/players', values);
+      if (player) {
+        const { isActive, ...permitted } = values;
+        await api.patch(`/players/${player._id}`, account?.role === 'member' ? permitted : values);
+      } else await api.post('/players', values);
       toast(`Player ${player ? 'updated' : 'created'} successfully.`);
       onDone();
     } catch (cause) {
@@ -123,10 +127,12 @@ export function PlayerForm({
           <small className="field-error">{errors.availability.message}</small>
         )}
       </fieldset>
-      <label className="check-label">
-        <input type="checkbox" {...register('isActive')} />
-        Active player
-      </label>
+      {account?.role === 'admin' && (
+        <label className="check-label">
+          <input type="checkbox" {...register('isActive')} />
+          Active player
+        </label>
+      )}
       <FormError message={errors.root?.message} />
       <FormActions
         editing={!!player}
@@ -438,6 +444,7 @@ export function JoinQueueForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { account } = useAuth();
   const toast = useToast();
   const {
     register,
@@ -446,7 +453,7 @@ export function JoinQueueForm({
     formState: { errors, isSubmitting },
   } = useForm<JoinQueueValues>({
     resolver: zodResolver(joinQueueSchema),
-    defaultValues: { courtId },
+    defaultValues: { courtId, playerId: account?.role === 'member' ? account.playerId : '' },
   });
   const submit = async (values: JoinQueueValues) => {
     try {
@@ -462,7 +469,7 @@ export function JoinQueueForm({
       <input type="hidden" {...register('courtId')} />
       <p className="muted">Your place is assigned by the time you join.</p>
       <Field label="Player" error={errors.playerId?.message}>
-        <Select {...register('playerId')}>
+        <Select {...register('playerId')} disabled={account?.role === 'member'}>
           <option value="">Choose a player</option>
           {players
             .filter((player) => player.isActive)

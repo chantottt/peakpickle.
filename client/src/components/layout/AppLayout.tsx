@@ -1,3 +1,4 @@
+import { useAuth } from '../../auth';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
@@ -32,6 +33,8 @@ const items = [
   { to: '/statistics', label: 'Statistics', icon: ChartNoAxesCombined },
 ];
 export function AppLayout() {
+  const { account: user, logout } = useAuth();
+  const [logoutError, setLogoutError] = useState('');
   const [open, setOpen] = useState(false);
   const [account, setAccount] = useState(false);
   const location = useLocation();
@@ -47,7 +50,9 @@ export function AppLayout() {
     return () => document.removeEventListener('keydown', close);
   }, []);
   const current =
-    items.find((item) => location.pathname.startsWith(item.to))?.label || 'PeakPickle';
+    (location.pathname.endsWith('/dashboard') ? 'Dashboard' : undefined) ||
+    items.find((item) => location.pathname.startsWith(item.to))?.label ||
+    'PeakPickle';
   return (
     <div className="app-shell">
       <a href="#main-content" className="skip-link">
@@ -73,16 +78,20 @@ export function AppLayout() {
         </div>
         <p className="sidebar-caption">YOUR CLUB, CONNECTED</p>
         <nav aria-label="Application">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-            >
-              <item.icon size={19} />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {items
+            .filter(
+              (item) => user?.role === 'admin' || !['/players', '/statistics'].includes(item.to),
+            )
+            .map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              >
+                <item.icon size={19} />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
         </nav>
         <div className="sidebar-promo">
           <span>MAKE TIME FOR PLAY</span>
@@ -101,9 +110,9 @@ export function AppLayout() {
             Account & settings
           </button>
           <button className="club-account" onClick={() => setAccount(true)}>
-            <Avatar name="Club Manager" id="000000000000000000000001" />
+            <Avatar name={user!.name} id={user!._id} />
             <span>
-              <strong>Club Manager</strong>
+              <strong>{user?.name}</strong>
               <small>PeakPickle community</small>
             </span>
             <ChevronRight size={16} />
@@ -137,7 +146,7 @@ export function AppLayout() {
               aria-label="Account information"
               onClick={() => setAccount(true)}
             >
-              <Avatar name="Club Manager" id="000000000000000000000001" />
+              <Avatar name={user!.name} id={user!._id} />
             </button>
           </div>
         </header>
@@ -151,17 +160,22 @@ export function AppLayout() {
       </div>
       {account && (
         <Modal title="Your club workspace" onClose={() => setAccount(false)}>
-          <p className="muted">
-            PeakPickle is a shared club management workspace. Player profiles are managed in
-            Players.
-          </p>
+          <p className="muted">You are signed in as {user?.role}. Your session lasts one hour.</p>
           <div className="account-info">
-            <strong>Club Manager</strong>
+            <strong>{user?.name}</strong>
             <span>Timezone: Asia/Manila</span>
-            <span>Authentication is outside this project’s core scope.</span>
+            <span>{user?.email}</span>
           </div>
           <div className="form-actions">
             <Button onClick={() => setAccount(false)}>Done</Button>
+            <Button
+              onClick={() => {
+                void logout().catch(() => setLogoutError('Logout failed. Please retry.'));
+              }}
+            >
+              Log out
+            </Button>
+            {logoutError && <p role="alert">{logoutError}</p>}
           </div>
         </Modal>
       )}

@@ -1,3 +1,4 @@
+import { currentTime } from '../utils/time.js';
 import type { RequestHandler } from 'express';
 import { Court } from '../models/Court.js';
 import { Reservation } from '../models/Reservation.js';
@@ -28,12 +29,14 @@ async function courtRows(id?: string) {
       const schedule = reservations.filter(
         (row) => String(row.courtId) === String(court._id) && row.reservationDate === today(),
       );
-      const nowTime = localTime(new Date());
+      const nowTime = localTime(currentTime());
       let fromTime = nowTime;
       if (court.status === 'occupied') {
         const current = await Match.findOne({ courtId: court._id, status: 'ongoing' }).lean();
         const duration = await averageDuration(String(court._id));
-        const finish = new Date((current?.startedAt?.getTime() || Date.now()) + duration * 60000);
+        const finish = new Date(
+          (current?.startedAt?.getTime() || currentTime().getTime()) + duration * 60000,
+        );
         fromTime = localTime(finish) > nowTime ? localTime(finish) : nowTime;
       }
       return {
