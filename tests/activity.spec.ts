@@ -1,4 +1,8 @@
+import { loginDemo } from './auth-helper';
 import { expect, test } from '@playwright/test';
+test.beforeEach(async ({ page }) => {
+  await loginDemo(page);
+});
 
 test('activity selection filters bookings and queue, and survives reload', async ({ page }) => {
   await page.goto('/activity');

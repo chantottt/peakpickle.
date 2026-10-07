@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -22,6 +23,8 @@ import {
 import { useToast } from '../components/ui/Toast';
 import { dateLabel, timeLabel, today } from '../utils/format';
 export function ReservationFormPage() {
+  const { account } = useAuth();
+  const member = account?.role === 'member';
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -39,12 +42,12 @@ export function ReservationFormPage() {
   } = useForm<ReservationFormValues>({
     resolver: zodResolver(reservationSchema),
     defaultValues: {
-      playerId: params.get('player') || '',
+      playerId: member ? account.playerId! : params.get('player') || '',
       courtId: params.get('court') || '',
       reservationDate: today(),
       startTime: '09:00',
       endTime: '10:00',
-      status: 'confirmed',
+      status: member ? 'pending' : 'confirmed',
     },
   });
   useEffect(() => {
@@ -80,8 +83,11 @@ export function ReservationFormPage() {
   const selectedPlayer = players.data?.find((player) => player._id === values.playerId);
   const submit = async (data: ReservationFormValues) => {
     try {
-      if (id) await api.patch(`/reservations/${id}`, data);
-      else await api.post('/reservations', data);
+      if (id) {
+        const payload =
+          member && record.data?.status === 'confirmed' ? { status: data.status } : data;
+        await api.patch(`/reservations/${id}`, payload);
+      } else await api.post('/reservations', data);
       toast(`Reservation ${id ? 'updated' : 'created'} successfully.`);
       navigate('/reservations');
     } catch (cause) {
@@ -89,13 +95,17 @@ export function ReservationFormPage() {
       void availability.refetch();
     }
   };
-  const statuses = !id
-    ? ['pending', 'confirmed']
-    : record.data?.status === 'pending'
-      ? ['pending', 'confirmed', 'cancelled']
-      : record.data?.status === 'confirmed'
-        ? ['confirmed', 'completed', 'cancelled']
-        : [record.data?.status || 'confirmed'];
+  const statuses = member
+    ? record.data?.status === 'confirmed'
+      ? ['confirmed', 'cancelled']
+      : ['pending', ...(id ? ['cancelled'] : [])]
+    : !id
+      ? ['pending', 'confirmed']
+      : record.data?.status === 'pending'
+        ? ['pending', 'confirmed', 'cancelled']
+        : record.data?.status === 'confirmed'
+          ? ['confirmed', 'completed', 'cancelled']
+          : [record.data?.status || 'confirmed'];
   const finalized = record.data && ['completed', 'cancelled'].includes(record.data.status);
   return (
     <>
@@ -123,7 +133,7 @@ export function ReservationFormPage() {
             <form onSubmit={handleSubmit(submit)} noValidate>
               <div className="form-grid">
                 <Field label="Player" error={errors.playerId?.message}>
-                  <Select {...register('playerId')} disabled={!!finalized}>
+                  <Select {...register('playerId')} disabled={!!finalized || member}>
                     <option value="">Select a player</option>
                     {players.data
                       ?.filter((player) => player.isActive)
@@ -135,18 +145,35 @@ export function ReservationFormPage() {
                   </Select>
                 </Field>
                 <Field label="Date" error={errors.reservationDate?.message}>
-                  <Input type="date" {...register('reservationDate')} disabled={!!finalized} />
+                  <Input
+                    type="date"
+                    {...register('reservationDate')}
+                    disabled={!!finalized || (member && record.data?.status === 'confirmed')}
+                  />
                 </Field>
                 <Field label="Start Time" error={errors.startTime?.message}>
-                  <Input type="time" {...register('startTime')} disabled={!!finalized} />
+                  <Input
+                    type="time"
+                    {...register('startTime')}
+                    disabled={!!finalized || (member && record.data?.status === 'confirmed')}
+                  />
                 </Field>
                 <Field label="End Time" error={errors.endTime?.message}>
-                  <Input type="time" {...register('endTime')} disabled={!!finalized} />
+                  <Input
+                    type="time"
+                    {...register('endTime')}
+                    disabled={!!finalized || (member && record.data?.status === 'confirmed')}
+                  />
                 </Field>
                 <Field label="Available Court" error={errors.courtId?.message}>
                   <Select
                     {...register('courtId')}
-                    disabled={availability.loading || !!availability.error || !!finalized}
+                    disabled={
+                      availability.loading ||
+                      !!availability.error ||
+                      !!finalized ||
+                      (member && record.data?.status === 'confirmed')
+                    }
                   >
                     <option value="">
                       {availability.loading

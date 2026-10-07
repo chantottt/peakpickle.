@@ -18,6 +18,6 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
           ? 'Invalid JSON request.'
           : error.message;
   }
-  if (status === 500) console.error(error);
+  if (status === 500) console.error('Request failed:', error.name || 'Error');
   res.status(status).json({ message });
 };

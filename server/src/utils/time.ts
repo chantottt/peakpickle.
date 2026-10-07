@@ -1,3 +1,6 @@
+// Business clock is injectable in regression tests without changing MongoDB driver/session clocks.
+export const clock = { now: () => new Date() };
+export const currentTime = () => clock.now();
 export const toMinutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
 export function today() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -5,7 +8,7 @@ export function today() {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date());
+  }).format(currentTime());
 }
 export function localDate(value: Date) {
   return new Intl.DateTimeFormat('en-CA', {

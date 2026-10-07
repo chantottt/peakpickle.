@@ -12,7 +12,7 @@ export const dateSchema = z
 export const playerSchema = z
   .object({
     name: z.string().trim().min(2).max(80),
-    email: z.email().toLowerCase(),
+    email: z.string().trim().toLowerCase().pipe(z.email()),
     skillLevel: z.enum(['beginner', 'intermediate', 'advanced']),
     preferredPlay: z.enum(['singles', 'doubles', 'both']),
     isActive: z.boolean().optional(),

@@ -1,3 +1,4 @@
+import { currentTime } from '../utils/time.js';
 import { QueueEntry } from '../models/QueueEntry.js';
 import { Player } from '../models/Player.js';
 import { Court } from '../models/Court.js';
@@ -81,7 +82,7 @@ export async function joinQueue(body: unknown) {
       !(await Match.exists({ players: input.playerId, status: 'ongoing' }).session(session)),
       'Player is already playing.',
     );
-    const entry = new QueueEntry(input);
+    const entry = new QueueEntry({ ...input, joinedAt: currentTime() });
     await entry.save({ session });
     return entry.populate('playerId');
   });
@@ -104,7 +105,7 @@ export async function callNext(courtId: string, playType: 'singles' | 'doubles' 
     for (const entry of entries) {
       entry.playType = playType;
       entry.status = 'called';
-      entry.calledAt = new Date();
+      entry.calledAt = currentTime();
       await entry.save({ session });
     }
     return entries;
@@ -140,7 +141,7 @@ export async function startQueuedMatch(courtId: string) {
       isActive: true,
     }).session(session);
     assert(activePlayers === size, 'Called players must be active.');
-    const now = new Date();
+    const now = currentTime();
     await checkMatchStart(courtId, players.map(String), now, session);
     const match = new Match({
       courtId,
@@ -195,7 +196,7 @@ export async function changeQueueEntry(
       const size = playType === 'doubles' ? 4 : 2;
       assert(called.length < size, `${size} players are already called.`);
       entry.playType = playType;
-      entry.calledAt = new Date();
+      entry.calledAt = currentTime();
     }
     entry.status = status;
     await entry.save({ session });

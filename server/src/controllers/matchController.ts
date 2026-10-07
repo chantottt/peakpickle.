@@ -12,6 +12,7 @@ export const list: RequestHandler = async (req, res) => {
     ...(req.query.playType ? { playType: String(req.query.playType) } : {}),
     ...(req.query.courtId ? { courtId: validateId(String(req.query.courtId)) } : {}),
   };
+  if (req.account?.role === 'member') Object.assign(filter, { players: req.account.playerId });
   const search = String(req.query.search || '').toLowerCase();
   res.json(
     (await matchesWithResults(filter)).filter(

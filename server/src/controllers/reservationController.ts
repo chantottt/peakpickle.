@@ -8,6 +8,7 @@ export const list: RequestHandler = async (req, res) => {
   const filter: Record<string, unknown> = {};
   if (req.query.courtId) filter.courtId = validateId(String(req.query.courtId));
   if (req.query.playerId) filter.playerId = validateId(String(req.query.playerId));
+  if (req.account?.role === 'member') filter.playerId = req.account.playerId;
   if (req.query.status) filter.status = String(req.query.status);
   if (req.query.date) filter.reservationDate = parse(dateSchema, req.query.date);
   const rows = await Reservation.find(filter)
@@ -33,7 +34,13 @@ export const detail: RequestHandler = async (req, res) => {
 export const create: RequestHandler = async (req, res) =>
   res.status(201).json(await saveReservation(req.body));
 export const update: RequestHandler = async (req, res) =>
-  res.json(await saveReservation(req.body, String(req.params.id)));
+  res.json(
+    await saveReservation(
+      req.body,
+      String(req.params.id),
+      req.account?.role === 'member' ? req.account.playerId : undefined,
+    ),
+  );
 export const remove: RequestHandler = async (req, res) => {
   const id = validateId(String(req.params.id));
   const row = await Reservation.findById(id);

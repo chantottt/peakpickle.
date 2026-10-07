@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, MapPin, Pencil, Trash2, ListOrdered } from 'lucide-react';
@@ -21,6 +22,8 @@ import { CourtForm } from '../components/ui/EntityForms';
 import { QueueCard } from '../components/queue/QueueCard';
 import { capitalize, timeLabel } from '../utils/format';
 export function CourtDetailPage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const { id } = useParams();
   const navigate = useNavigate();
   const state = useApi<Court>(`/courts/${id}`);
@@ -56,15 +59,17 @@ export function CourtDetailPage() {
                   <StatusBadge status={court.status} />
                 </div>
               </div>
-              <div className="page-actions">
-                <Button variant="secondary" onClick={() => setEdit(true)}>
-                  <Pencil size={15} />
-                  Edit Court
-                </Button>
-                <Button variant="ghost" aria-label="Delete court" onClick={() => setRemove(true)}>
-                  <Trash2 size={17} />
-                </Button>
-              </div>
+              {admin && (
+                <div className="page-actions">
+                  <Button variant="secondary" onClick={() => setEdit(true)}>
+                    <Pencil size={15} />
+                    Edit Court
+                  </Button>
+                  <Button variant="ghost" aria-label="Delete court" onClick={() => setRemove(true)}>
+                    <Trash2 size={17} />
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="section-tabs" role="tablist" aria-label="Court information">
               {['overview', 'schedule', 'live queue'].map((value) => (
@@ -189,7 +194,7 @@ export function CourtDetailPage() {
                     <QueueCard summary={queue.data[0]} />
                     <div className="section-gap">
                       <Link className="button button-primary" to={`/queue?court=${court._id}`}>
-                        Manage Live Queue
+                        View Live Queue
                       </Link>
                     </div>
                   </>

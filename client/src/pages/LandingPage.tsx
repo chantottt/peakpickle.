@@ -27,9 +27,9 @@ const links = [
 ];
 export function LandingPage() {
   const [menu, setMenu] = useState(false);
-  const courts = useApi<Court[]>('/courts');
-  const rankings = useApi<Player[]>('/players/rankings');
-  const stats = useApi<DashboardData>('/statistics/dashboard');
+  const courts = useApi<Court[]>('/public/courts');
+  const rankings = useApi<Player[]>('/public/rankings');
+  const stats = useApi<DashboardData>('/public/summary');
   return (
     <div className="landing">
       <header className="landing-navbar">

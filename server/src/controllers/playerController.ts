@@ -1,3 +1,4 @@
+import { User } from '../models/User.js';
 import type { RequestHandler } from 'express';
 import mongoose from 'mongoose';
 import { Player } from '../models/Player.js';
@@ -14,6 +15,7 @@ export const list: RequestHandler = async (req, res) => {
   res.json(
     players.filter(
       (player) =>
+        (req.account?.role !== 'member' || String(player._id) === req.account.playerId) &&
         (!search || `${player.name} ${player.email}`.toLowerCase().includes(search)) &&
         (!req.query.skillLevel || player.skillLevel === req.query.skillLevel) &&
         (!req.query.preferredPlay || player.preferredPlay === req.query.preferredPlay),
@@ -24,7 +26,13 @@ export const detail: RequestHandler = async (req, res) => {
   const id = validateId(String(req.params.id));
   const player = (await rankings()).find((player) => String(player._id) === id);
   assert(player, 'Record not found', 404);
-  res.json({ ...player, recentMatches: await matchesWithResults({ players: id }) });
+  res.json({
+    ...player,
+    recentMatches:
+      req.account?.role === 'member' && req.account.playerId !== id
+        ? []
+        : await matchesWithResults({ players: id }),
+  });
 };
 export const create: RequestHandler = async (req, res) =>
   res.status(201).json(await Player.create(parse(playerSchema, req.body)));
@@ -49,6 +57,12 @@ export const update: RequestHandler = async (req, res) => {
         'Leave the active queue and finish playing before deactivating this player.',
       );
     }
+    if (input.email)
+      await User.updateOne(
+        { playerId: id },
+        { $set: { email: input.email }, $inc: { sessionVersion: 1 } },
+        { session },
+      );
     record.set(input);
     await record.save({ session });
     return record;
@@ -64,6 +78,10 @@ export const remove: RequestHandler = async (req, res) => {
       { new: true, session },
     );
     assert(player, 'Record not found', 404);
+    assert(
+      !(await User.exists({ playerId: id }).session(session)),
+      'This player is linked to an account. Deactivate instead.',
+    );
     const reservation = await Reservation.exists({ playerId: id }).session(session);
     const queue = await QueueEntry.exists({ playerId: id }).session(session);
     const match = await Match.exists({ players: id }).session(session);

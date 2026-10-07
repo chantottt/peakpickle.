@@ -1,13 +1,55 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { after, afterEach, before, beforeEach, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
-import request from 'supertest';
+import rawRequest from 'supertest';
+import { User } from '../dist/models/User.js';
+import { Player } from '../dist/models/Player.js';
+import { hashPassword, signToken } from '../dist/services/authService.js';
+let adminId;
+const csrfToken = 'a'.repeat(64);
+function request(app) {
+  const client = rawRequest(app);
+  return Object.fromEntries(
+    ['get', 'post', 'patch', 'delete'].map((method) => [
+      method,
+      (path) =>
+        client[method](path)
+          .set('Cookie', ['pp_session=' + signToken(adminId, 0), 'pp_csrf=' + csrfToken])
+          .set('X-CSRF-Token', csrfToken)
+          .set('Origin', 'http://localhost:5173'),
+    ]),
+  );
+}
+process.env.JWT_SECRET = 'temporary-test-secret-with-at-least-32-characters';
+let adminHash;
+
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { app } from '../dist/app.js';
 import { seedData, seedId } from '../dist/seed/data.js';
-import { today, nextFreeTime } from '../dist/utils/time.js';
+import { today, nextFreeTime, clock, currentTime } from '../dist/utils/time.js';
+async function anonymous() {
+  const agent = rawRequest.agent(app);
+  const { body } = await agent.get('/api/auth/csrf').expect(200);
+  return { agent, token: body.csrfToken };
+}
+async function member(email = 'member@test.local') {
+  const client = await anonymous();
+  await client.agent
+    .post('/api/auth/signup')
+    .set('X-CSRF-Token', client.token)
+    .send({ name: 'Test Member', email, password: 'TestPassword!2026' })
+    .expect(201);
+  const me = await client.agent.get('/api/auth/me').expect(200);
+  return { ...client, me: me.body };
+}
 let database;
+let testTime;
+const setTestTime = (value) => {
+  testTime = new Date(value);
+};
 const id = (value) => seedId(value).toString();
 const reservation = (extra = {}) => ({
   playerId: id(118),
@@ -26,13 +68,27 @@ before(async () => {
     binary: { version: '7.0.24' },
   });
   await mongoose.connect(database.getUri('peakpickle_tests'));
+  await User.init();
+  await Player.init();
+  adminHash = await hashPassword('TestPassword!2026');
 });
-beforeEach(async () => {
+beforeEach(async (context) => {
   process.env.BUSINESS_TIMEZONE = 'Asia/Manila';
-  mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-05T04:00:00Z') });
-  await seedData();
+  // Keep driver/session clocks real for auth tests; only sports fixtures need a fixed game time.
+  if (
+    !/signup|login, refresh|CSRF|members cannot|member bookings|email changes|public landing|current roles|concurrent signup|authentication rate/i.test(
+      context.name,
+    )
+  ) {
+    setTestTime('2026-10-05T04:00:00Z');
+    mock.method(clock, 'now', () => new Date(testTime));
+  }
+  await seedData(true);
+  adminId = String(
+    (await User.create({ email: 'admin@test.local', passwordHash: adminHash, role: 'admin' }))._id,
+  );
 });
-afterEach(() => mock.timers.reset());
+afterEach(() => mock.restoreAll());
 after(async () => {
   await mongoose.disconnect();
   await database?.stop();
@@ -72,7 +128,7 @@ test('scheduled matches can be cancelled after deactivation or court maintenance
       courtId: court.body._id,
       players: [id(118), id(119)],
       playType: 'singles',
-      scheduledAt: new Date().toISOString(),
+      scheduledAt: currentTime().toISOString(),
     })
     .expect(201);
   await request(app)
@@ -99,7 +155,7 @@ for (const queued of [false, true]) {
             courtId: id(200),
             players: [id(102), id(103)],
             playType: 'singles',
-            scheduledAt: new Date().toISOString(),
+            scheduledAt: currentTime().toISOString(),
           })
           .expect(201);
     if (queued)
@@ -129,10 +185,10 @@ for (const queued of [false, true]) {
       .patch(`/api/reservations/${booking.body._id}`)
       .send({ playerId: id(102) })
       .expect(200);
-    mock.timers.setTime(new Date('2026-10-04T21:00:00Z').getTime()); // 05:00 Manila
+    setTestTime(new Date('2026-10-04T21:00:00Z').getTime()); // 05:00 Manila
     const closed = await start().expect(400);
     assert.match(closed.body.message, /operating hours/);
-    mock.timers.setTime(new Date('2026-10-05T04:00:00Z').getTime());
+    setTestTime(new Date('2026-10-05T04:00:00Z').getTime());
     await start().expect(queued ? 201 : 200);
   });
 }
@@ -154,7 +210,7 @@ test('next availability skips fully booked days and adjacent reservations', asyn
       }),
     )
     .expect(201);
-  mock.timers.setTime(new Date('2026-10-05T14:00:00Z').getTime());
+  setTestTime(new Date('2026-10-05T14:00:00Z').getTime());
   const court = await request(app)
     .get(`/api/courts/${id(200)}`)
     .expect(200);
@@ -468,7 +524,7 @@ test('match CRUD, status rules, score validation and rankings from results', asy
     courtId: id(203),
     players: [id(118), id(119)],
     playType: 'singles',
-    scheduledAt: new Date().toISOString(),
+    scheduledAt: currentTime().toISOString(),
   };
   const created = await request(app).post('/api/matches').send(payload).expect(201);
   const path = `/api/matches/${created.body._id}`;
@@ -533,7 +589,7 @@ test('two courts cannot start matches with the same player simultaneously', asyn
   const base = {
     players: [id(118), id(119)],
     playType: 'singles',
-    scheduledAt: new Date().toISOString(),
+    scheduledAt: currentTime().toISOString(),
   };
   const one = await request(app)
     .post('/api/matches')
@@ -582,4 +638,285 @@ test('malformed IDs, missing records, invalid JSON and 404s share JSON errors', 
     .set('Content-Type', 'application/json')
     .send('{broken')
     .expect(400);
+});
+
+// Authentication and authorization regression coverage uses the same temporary replica set.
+test('signup is normalized, atomic, member-only and never claims an existing sports profile', async () => {
+  const c = await anonymous();
+  const payload = {
+    name: 'New Member',
+    email: '  NEW@Test.local  ',
+    password: 'TestPassword!2026',
+  };
+  await c.agent
+    .post('/api/auth/signup')
+    .set('X-CSRF-Token', c.token)
+    .send({ ...payload, role: 'admin' })
+    .expect(400);
+  assert.equal(await User.countDocuments({ email: 'new@test.local' }), 0);
+  await c.agent.post('/api/auth/signup').set('X-CSRF-Token', c.token).send(payload).expect(201);
+  const me = (await c.agent.get('/api/auth/me').expect(200)).body;
+  assert.equal(me.role, 'member');
+  assert.equal(me.email, 'new@test.local');
+  assert.equal(me.player.email, me.email);
+  assert.equal(me.playerId, me.player._id);
+  assert.equal(me.passwordHash, undefined);
+  await c.agent.post('/api/auth/signup').set('X-CSRF-Token', c.token).send(payload).expect(409);
+  const legacy = await Player.findById(id(118));
+  await c.agent
+    .post('/api/auth/signup')
+    .set('X-CSRF-Token', c.token)
+    .send({ ...payload, email: legacy.email })
+    .expect(409);
+  assert.equal(await User.countDocuments({ playerId: legacy._id }), 0);
+});
+test('login, refresh restoration, invalid passwords, expiry, signatures, inactive users and global logout', async () => {
+  const c = await member();
+  await c.agent.get('/api/auth/me').expect(200);
+  const user = await User.findById(c.me._id).select('+passwordHash');
+  assert.ok(user.passwordHash.startsWith('scrypt:'));
+  assert.ok(!user.passwordHash.includes('TestPassword'));
+  await c.agent
+    .post('/api/auth/login')
+    .set('X-CSRF-Token', c.token)
+    .send({ email: c.me.email, password: 'WrongPassword!2026' })
+    .expect(401);
+  for (const token of [
+    'garbage',
+    signToken(c.me._id, 0, -1),
+    signToken(c.me._id, 0).slice(0, -8) + 'tampered',
+    signToken(c.me._id, 999),
+  ]) {
+    await rawRequest(app)
+      .get('/api/auth/me')
+      .set('Cookie', 'pp_session=' + token)
+      .expect(401);
+  }
+  await User.updateOne({ _id: c.me._id }, { isActive: false });
+  await c.agent.get('/api/auth/me').expect(401);
+  await c.agent
+    .post('/api/auth/login')
+    .set('X-CSRF-Token', c.token)
+    .send({ email: c.me.email, password: 'TestPassword!2026' })
+    .expect(401);
+  await User.updateOne({ _id: c.me._id }, { isActive: true });
+  await c.agent
+    .post('/api/auth/login')
+    .set('X-CSRF-Token', c.token)
+    .send({ email: c.me.email, password: 'TestPassword!2026' })
+    .expect(200);
+  const captured = signToken(c.me._id, 0);
+  await c.agent.post('/api/auth/logout').set('X-CSRF-Token', c.token).expect(200);
+  await c.agent.get('/api/auth/me').expect(401);
+  await rawRequest(app)
+    .get('/api/auth/me')
+    .set('Cookie', 'pp_session=' + captured)
+    .expect(401);
+  const admin = await anonymous();
+  await admin.agent
+    .post('/api/auth/login')
+    .set('X-CSRF-Token', admin.token)
+    .send({ email: 'admin@test.local', password: 'TestPassword!2026' })
+    .expect(200);
+  assert.equal((await admin.agent.get('/api/auth/me')).body.role, 'admin');
+});
+test('CSRF is required for signup/login and every authenticated mutation', async () => {
+  await rawRequest(app)
+    .post('/api/auth/login')
+    .send({ email: 'admin@test.local', password: 'TestPassword!2026' })
+    .expect(403);
+  const c = await member();
+  await c.agent
+    .post('/api/queue-entries')
+    .send({ courtId: id(200) })
+    .expect(403);
+  await c.agent
+    .post('/api/queue-entries')
+    .set('X-CSRF-Token', c.token)
+    .set('Origin', 'https://evil.example')
+    .send({ courtId: id(200) })
+    .expect(403);
+});
+test('members cannot escalate, manage sports, access others private records or impersonate players', async () => {
+  const c = await member();
+  const send = (method, path, body) =>
+    c.agent[method](path).set('X-CSRF-Token', c.token).send(body);
+  for (const path of [
+    '/api/courts',
+    '/api/players',
+    '/api/matches',
+    '/api/match-results',
+    `/api/queue-entries/courts/${id(200)}/call-next`,
+    `/api/queue-entries/courts/${id(200)}/start-match`,
+  ])
+    await send('post', path, {}).expect(403);
+  await c.agent.get('/api/statistics').expect(403);
+  await c.agent.get('/api/statistics/dashboard').expect(403);
+  await send('patch', `/api/players/${c.me.playerId}`, { role: 'admin' }).expect(403);
+  await send('patch', `/api/players/${id(118)}`, { name: 'Impersonation' }).expect(403);
+  await send('post', '/api/reservations', reservation()).expect(403);
+  await send('post', '/api/queue-entries', { playerId: id(118), courtId: id(200) }).expect(403);
+  await c.agent.get(`/api/reservations/${id(300)}`).expect(404);
+  await c.agent.get(`/api/matches/${id(400)}`).expect(404);
+  assert.deepEqual((await c.agent.get('/api/reservations?playerId=' + id(102))).body, []);
+  const profile = (await c.agent.get('/api/players/' + id(102))).body;
+  assert.equal(profile.email, undefined);
+  assert.deepEqual(profile.recentMatches, []);
+  const ranks = (await c.agent.get('/api/players/rankings')).body;
+  assert.ok(ranks.filter((p) => p._id !== c.me.playerId).every((p) => !p.email));
+});
+test('member bookings are pending, owned, editable and cancellable; queue cancellation preserves order', async () => {
+  const c = await member();
+  const send = (method, path, body) =>
+    c.agent[method](path).set('X-CSRF-Token', c.token).send(body);
+  const input = reservation();
+  delete input.playerId;
+  await send('post', '/api/reservations', { ...input, status: 'confirmed' }).expect(403);
+  const booking = (await send('post', '/api/reservations', input).expect(201)).body;
+  assert.equal(booking.playerId._id, c.me.playerId);
+  assert.equal(booking.status, 'pending');
+  await send('patch', '/api/reservations/' + booking._id, { endTime: '09:30' }).expect(200);
+  await send('patch', '/api/reservations/' + booking._id, { status: 'confirmed' }).expect(403);
+  const other = await member('other@test.local');
+  await other.agent
+    .patch('/api/reservations/' + booking._id)
+    .set('X-CSRF-Token', other.token)
+    .send({ status: 'cancelled' })
+    .expect(404);
+  await request(app)
+    .patch('/api/reservations/' + booking._id)
+    .send({ status: 'confirmed' })
+    .expect(200);
+  await send('patch', '/api/reservations/' + booking._id, { endTime: '10:30' }).expect(403);
+  await send('patch', '/api/reservations/' + booking._id, { status: 'cancelled' }).expect(200);
+  const queued = (await send('post', '/api/queue-entries', { courtId: id(200) }).expect(201)).body;
+  await send('patch', '/api/queue-entries/' + queued._id, { status: 'called' }).expect(403);
+  await other.agent
+    .patch('/api/queue-entries/' + queued._id)
+    .set('X-CSRF-Token', other.token)
+    .send({ status: 'cancelled' })
+    .expect(404);
+  await send('patch', '/api/queue-entries/' + queued._id, { status: 'cancelled' }).expect(200);
+});
+test('email changes are atomic, unique and invalidate existing sessions; linked sports profiles cannot be deleted or reseeded accidentally', async () => {
+  const c = await member();
+  await c.agent
+    .patch('/api/players/' + c.me.playerId)
+    .set('X-CSRF-Token', c.token)
+    .send({ email: 'changed@test.local' })
+    .expect(200);
+  assert.equal((await User.findById(c.me._id)).email, 'changed@test.local');
+  assert.equal((await Player.findById(c.me.playerId)).email, 'changed@test.local');
+  await c.agent.get('/api/auth/me').expect(401);
+  await request(app)
+    .delete('/api/players/' + c.me.playerId)
+    .expect(400);
+  await assert.rejects(seedData(), /Accounts exist/);
+});
+test('public landing endpoints never include private bookings or contact data', async () => {
+  await rawRequest(app).get('/api/statistics/dashboard').expect(401);
+  const courts = (await rawRequest(app).get('/api/public/courts').expect(200)).body;
+  assert.ok(courts.every((court) => !court.schedule && !court.nextSchedule));
+  const ranks = (await rawRequest(app).get('/api/public/rankings').expect(200)).body;
+  assert.ok(ranks.every((player) => !player.email && typeof player._id === 'string'));
+  const summary = (await rawRequest(app).get('/api/public/summary').expect(200)).body;
+  assert.equal(summary.upcomingReservations, undefined);
+  assert.equal(summary.recentMatches, undefined);
+});
+
+test('current roles and active status override old JWTs; member court reads hide others reservations', async () => {
+  const c = await member();
+  const courts = (await c.agent.get('/api/courts').expect(200)).body;
+  assert.ok(
+    courts.every(
+      (court) =>
+        court.schedule.every((booking) => booking.playerId._id === c.me.playerId) &&
+        !court.nextSchedule,
+    ),
+  );
+  await c.agent
+    .get(
+      '/api/courts/availability?date=' +
+        today() +
+        '&startTime=09:00&endTime=10:00&excludeReservationId=' +
+        id(300),
+    )
+    .expect(403);
+  await User.updateOne({ _id: adminId }, { role: 'member', playerId: seedId(118) });
+  await request(app).post('/api/courts').send({}).expect(403);
+  await User.updateOne({ _id: adminId }, { role: 'admin', isActive: false });
+  await request(app).get('/api/statistics').expect(401);
+});
+
+test('concurrent signup leaves exactly one account and player with no orphan profile', async () => {
+  const clients = await Promise.all([anonymous(), anonymous()]);
+  const input = {
+    name: 'Concurrent Member',
+    email: 'race@test.local',
+    password: 'TestPassword!2026',
+  };
+  const responses = await Promise.all(
+    clients.map((c) => c.agent.post('/api/auth/signup').set('X-CSRF-Token', c.token).send(input)),
+  );
+  assert.equal(responses.filter((response) => response.status === 201).length, 1);
+  assert.ok(responses.every((response) => [201, 400, 409].includes(response.status)));
+  assert.equal(await User.countDocuments({ email: input.email }), 1);
+  assert.equal(await Player.countDocuments({ email: input.email }), 1);
+  const user = await User.findOne({ email: input.email });
+  assert.equal(String(user.playerId), String((await Player.findOne({ email: input.email }))._id));
+});
+
+test('authentication rate limiting rejects excess login and signup attempts', async () => {
+  const c = await anonymous();
+  let limited = false;
+  // Invalid input avoids expensive password derivation but still counts as an auth attempt.
+  for (let index = 0; index < 31; index++) {
+    const response = await c.agent.post('/api/auth/login').set('X-CSRF-Token', c.token).send({});
+    assert.ok([400, 429].includes(response.status));
+    if (response.status === 429) {
+      limited = true;
+      break;
+    }
+  }
+  assert.ok(limited);
+  await c.agent.post('/api/auth/signup').set('X-CSRF-Token', c.token).send({}).expect(429);
+});
+
+test('controlled provisioning creates the first admin and links only an explicitly verified existing player', async () => {
+  await User.deleteMany({});
+  const run = promisify(execFile);
+  const provision = async (overrides = {}) =>
+    run(process.execPath, ['dist/seed/createAccount.js'], {
+      cwd: fileURLToPath(new URL('../', import.meta.url)),
+      env: {
+        ...process.env,
+        MONGO_URI: database.getUri('peakpickle_tests'),
+        ADMIN_EMAIL: 'first@test.local',
+        ADMIN_PASSWORD: 'ProvisionPassword!2026',
+        LINK_PLAYER_ID: '',
+        ...overrides,
+      },
+    });
+  const first = await provision();
+  assert.match(first.stdout, /First admin created/);
+  assert.ok(!first.stdout.includes('ProvisionPassword'));
+  assert.equal((await User.findOne({ email: 'first@test.local' })).role, 'admin');
+  await assert.rejects(provision({ ADMIN_EMAIL: 'second@test.local' }));
+  const player = await Player.findById(id(118));
+  const matchesBefore = await mongoose.model('Match').countDocuments({ players: player._id });
+  await assert.rejects(
+    provision({ ADMIN_EMAIL: 'incorrect@test.local', LINK_PLAYER_ID: String(player._id) }),
+  );
+  const linked = await provision({ ADMIN_EMAIL: player.email, LINK_PLAYER_ID: String(player._id) });
+  assert.match(linked.stdout, /Member account explicitly linked/);
+  const user = await User.findOne({ email: player.email });
+  assert.equal(user.role, 'member');
+  assert.equal(String(user.playerId), String(player._id));
+  assert.equal(
+    await mongoose.model('Match').countDocuments({ players: player._id }),
+    matchesBefore,
+  );
+  await assert.rejects(
+    provision({ ADMIN_EMAIL: player.email, LINK_PLAYER_ID: String(player._id) }),
+  );
 });

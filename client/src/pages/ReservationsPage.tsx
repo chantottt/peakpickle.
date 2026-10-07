@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
@@ -21,6 +22,8 @@ import {
 } from '../components/ui';
 import { queryString, capitalize, dateLabel, timeLabel } from '../utils/format';
 export function ReservationsPage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const [params] = useSearchParams();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -124,13 +127,24 @@ export function ReservationsPage() {
                             <Pencil size={15} />
                           </Link>
                         )}
-                        <Button
-                          variant="ghost"
-                          aria-label={`Delete reservation for ${reservation.playerId.name}`}
-                          onClick={() => setRemove(reservation)}
-                        >
-                          <Trash2 size={15} />
-                        </Button>
+                        {admin && (
+                          <Button
+                            variant="ghost"
+                            aria-label={`Delete reservation for ${reservation.playerId.name}`}
+                            onClick={() => setRemove(reservation)}
+                          >
+                            <Trash2 size={15} />
+                          </Button>
+                        )}
+                        {!admin && ['pending', 'confirmed'].includes(reservation.status) && (
+                          <Button
+                            variant="ghost"
+                            aria-label={`Cancel reservation for ${reservation.playerId.name}`}
+                            onClick={() => setRemove(reservation)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -147,13 +161,17 @@ export function ReservationsPage() {
       </DataState>
       {remove && (
         <ConfirmDialog
-          title="Delete Reservation?"
+          title={admin ? 'Delete Reservation?' : 'Cancel Reservation?'}
+          confirmLabel={admin ? 'Delete' : 'Cancel booking'}
           onClose={() => setRemove(null)}
           busy={mutation.busy}
           onConfirm={() =>
             mutation.run(
-              () => api.delete(`/reservations/${remove._id}`),
-              'Reservation deleted successfully.',
+              () =>
+                admin
+                  ? api.delete(`/reservations/${remove._id}`)
+                  : api.patch(`/reservations/${remove._id}`, { status: 'cancelled' }),
+              admin ? 'Reservation deleted successfully.' : 'Reservation cancelled successfully.',
               () => {
                 setRemove(null);
                 void state.refetch();

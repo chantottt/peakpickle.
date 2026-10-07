@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
@@ -15,6 +16,8 @@ import { CourtForm } from '../components/ui/EntityForms';
 import { CourtCard } from '../components/courts/CourtCard';
 import { queryString, capitalize } from '../utils/format';
 export function CourtsPage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
@@ -26,10 +29,12 @@ export function CourtsPage() {
         title="Courts"
         description="Manage and monitor pickleball courts."
         action={
-          <Button onClick={() => setCreate(true)}>
-            <Plus size={17} />
-            Add Court
-          </Button>
+          admin && (
+            <Button onClick={() => setCreate(true)}>
+              <Plus size={17} />
+              Add Court
+            </Button>
+          )
         }
       />
       <div className="filters">
@@ -60,7 +65,7 @@ export function CourtsPage() {
           <EmptyState
             title="No courts found"
             description="Try a different search or add your first court."
-            action={<Button onClick={() => setCreate(true)}>Add Court</Button>}
+            action={admin && <Button onClick={() => setCreate(true)}>Add Court</Button>}
           />
         )}
       </DataState>

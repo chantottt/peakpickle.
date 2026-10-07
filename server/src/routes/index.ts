@@ -1,3 +1,8 @@
+import { authenticate, csrf, adminOnly } from '../middleware/auth.js';
+import { permissions, safeFields } from '../middleware/permissions.js';
+import { authRouter } from './auth.js';
+import { Court } from '../models/Court.js';
+import { statistics as publicStatistics } from '../services/statisticsService.js';
 import { Router } from 'express';
 import * as players from '../controllers/playerController.js';
 import * as courts from '../controllers/courtController.js';
@@ -33,8 +38,34 @@ matchRouter.route('/').get(matches.list).post(matches.create);
 matchRouter.route('/:id').get(matches.detail).patch(matches.update).delete(matches.remove);
 const resultRouter = Router();
 resultRouter.post('/', matches.createResult);
-resultRouter.get('/:id', matches.resultDetail);
+resultRouter.get('/:id', adminOnly, matches.resultDetail);
 apiRouter.get('/health', (_req, res) => res.json({ status: 'ok', application: 'PeakPickle' }));
+apiRouter.get('/public/courts', async (_req, res) =>
+  res.json(
+    await Court.find()
+      .select('name courtNumber location type status openingTime closingTime')
+      .sort({ courtNumber: 1 })
+      .lean(),
+  ),
+);
+apiRouter.get('/public/rankings', async (_req, res) => {
+  const { rankings } = await import('../services/playerService.js');
+  res.json(safeFields(await rankings()));
+});
+apiRouter.get('/public/summary', async (_req, res) => {
+  const stats = await publicStatistics();
+  res.json({
+    totalPlayers: stats.totalPlayers,
+    courtsOpen: stats.courtsOpen,
+    courtsAvailable: stats.courtsAvailable,
+    matchesToday: stats.matchesToday,
+    playersInQueue: stats.playersInQueue,
+    totalMatches: stats.totalMatches,
+  });
+});
+apiRouter.use(csrf);
+apiRouter.use('/auth', authRouter);
+apiRouter.use(authenticate, permissions);
 apiRouter.use('/players', playerRouter);
 apiRouter.use('/courts', courtRouter);
 apiRouter.use('/reservations', reservationRouter);

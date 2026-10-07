@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CalendarDays, ListOrdered, Swords } from 'lucide-react';
@@ -20,7 +21,8 @@ import { dateLabel, timeLabel } from '../utils/format';
 
 export function ActivityPage() {
   const [params, setParams] = useSearchParams();
-  const playerId = params.get('player') || '';
+  const { account } = useAuth();
+  const playerId = account?.role === 'member' ? account.playerId! : params.get('player') || '';
   const players = useApi<Player[]>('/players');
   const selected = players.data?.find((player) => player._id === playerId);
   const reservations = useApi<Reservation[]>(
@@ -66,27 +68,29 @@ export function ActivityPage() {
         title="My Activity"
         description="Your next booking, your place in line, and your upcoming games."
       />
-      <Card className="activity-picker">
-        <Field
-          label="Player"
-          hint="Choose a player to view their activity in this shared club workspace."
-        >
-          <Select
-            value={playerId}
-            onChange={(event) =>
-              setParams(event.target.value ? { player: event.target.value } : {})
-            }
+      {account?.role === 'admin' && (
+        <Card className="activity-picker">
+          <Field
+            label="Player"
+            hint="Choose a player to view their activity in this shared club workspace."
           >
-            <option value="">Select a player</option>
-            {players.data?.map((player) => (
-              <option key={player._id} value={player._id}>
-                {player.name}
-                {player.isActive ? '' : ' (inactive)'}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </Card>
+            <Select
+              value={playerId}
+              onChange={(event) =>
+                setParams(event.target.value ? { player: event.target.value } : {})
+              }
+            >
+              <option value="">Select a player</option>
+              {players.data?.map((player) => (
+                <option key={player._id} value={player._id}>
+                  {player.name}
+                  {player.isActive ? '' : ' (inactive)'}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </Card>
+      )}
       <DataState
         loading={
           players.loading ||

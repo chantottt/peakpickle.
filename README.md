@@ -1,282 +1,171 @@
 # PeakPickle
 
-**A desktop-first responsive pickleball court reservation, player matching, and queueing system.**
+PeakPickle is a responsive pickleball court reservation, player matching, and queue management application. It runs on localhost, with persistent data stored in MongoDB Atlas.
 
-Your Court. Your Match. Your Turn.
+## Separate admin and member screens
 
-PeakPickle connects court schedules, players, live queues, and match results in one club workspace. React sends requests through one Axios instance to an Express REST API; Mongoose validates and permanently stores records in MongoDB Atlas. Business services compute available slots, FCFS queue positions and waits, player compatibility, rankings, and club statistics.
+After login, the application redirects users according to their account role:
 
-## Group and submission
+| Role | Dashboard | Access |
+| --- | --- | --- |
+| Admin | `/admin/dashboard` | Manage courts, players, reservations, queues, matches, results, and club statistics |
+| Member | `/member/dashboard` | View personal activity, book courts, join queues, view own matches, and update permitted profile fields |
 
-Course: **CTADWEBL — Advanced Web Programming**, A.Y. 2026–2027.
-
-| Member      | Actual contribution                 | GitHub account |
-| ----------- | ----------------------------------- | -------------- |
-| chantottt   | [Fill with work actually completed] | [Username]     |
-| smurfdei28  | [Fill with work actually completed] | [Username]     |
-| surla-nicko | [Fill with work actually completed] | [Username]     |
-
-GitHub repository: **[PeakPickle on GitHub](https://github.com/chantottt/peakpickle.)**.
-
-The attached rubric requires strictly **2 or 3 members** and meaningful commits by each member using their own account. The three member identifiers above were supplied by the user. Add legal/full names if your class requires them, and fill only actual contributions. No accounts or commit history have been invented.
-
-The DOCX's repository section requests separate client/server repositories, while its final submission section requests one repository containing both folders. This deliverable follows the final submission structure. Confirm the repository count with your instructor before submitting. Both folders also have independent package manifests and scripts if two repositories are required. The document states submission on or before October 5 and defense October 5–6; confirm the year and schedule with your class.
+Public signup creates member accounts only. Admin accounts are created through the local provisioning script. The backend checks roles and record ownership, so members cannot manage another member's private records.
 
 ## Features
 
-- Polished landing page, supplied paddle/ball logo, forest sidebar, lime accents, and responsive desktop dashboard.
-- Court CRUD, status/type/location search, details, operating hours, schedule, queue, and estimated next availability.
-- Reservation CRUD with live availability lookup, overlap prevention, operating-hour checks, and guarded transitions.
-- FCFS live queue with dynamic positions, average duration, estimated waits, call-next, start, skip, leave, and complete through score recording.
-- Live elapsed queue wait indicators and singles/doubles queue groups; the UI defaults to doubles.
-- My Activity player selector brings upcoming reservations, active queue entries, and upcoming/ongoing matches together.
-- Player CRUD, active status, skill/play/time preferences, profiles, and match history.
-- Matching scored exactly as requested: same skill 60, compatible availability 30, same preferred play 10.
-- Singles/doubles scheduling, start/cancel transitions, scorecards, validated results, automatically derived winners, and ranking updates.
-- Rankings and three analytics charts computed from MongoDB records.
-- Shared loading skeletons, retryable errors, empty states, success/error toasts, accessible modals, and delete confirmations.
-- TypeScript on both sides, React Hook Form + external Zod schemas + z.infer, a single Axios client, custom hooks, and reusable components.
-- Real integration tests against MongoDB, including concurrent booking and concurrent player participation checks.
+- Signup, login, logout, and session restoration after refresh.
+- Hashed passwords, expiring JWTs in HttpOnly cookies, CSRF protection, and login rate limiting.
+- Court availability and overlapping reservation prevention.
+- Member bookings start as pending; admins confirm or complete them.
+- First-come-first-served queues with singles/doubles groups, positions, and wait estimates.
+- Player matching: skill 60%, availability 30%, and play preference 10%.
+- Match results, rankings, and club statistics computed from database records.
+- Responsive pages, form validation, loading/error states, and action feedback.
 
-## Screenshots
+Original sample data and recoverable extra demo records have been imported into Atlas. Existing Atlas records were preserved. Temporary demo data does not automatically transfer to Atlas.
 
-Desktop dashboard at 1440px:
+## Technologies
 
-![PeakPickle desktop dashboard](screenshots/dashboard-desktop.jpg)
+React, Vite, TypeScript, Tailwind CSS, React Router, React Hook Form, Zod, Axios, Node.js, Express, and MongoDB Atlas/Mongoose.
 
-Landing page:
+## Group members
 
-![PeakPickle landing page](screenshots/landing-desktop.jpg)
+Fill in each member's actual contribution and GitHub account before submission.
 
-Live queue:
+| Member | Contribution | GitHub account |
+| --- | --- | --- |
+| chantottt | To be completed | To be completed |
+| Ejay Balsamo | Log in/Sign up, MongoDB set up, Client/Server | smurfdei28 |
+| surla-nicko | To be completed | To be completed |
 
-![PeakPickle live queue](screenshots/queue-desktop.jpg)
+## Local setup
 
-Responsive reservations at 375px:
-
-![PeakPickle mobile-browser reservations](screenshots/reservations-mobile.jpg)
-
-The paddle and ball logo was supplied for this project. The court photo is a presentation placeholder by Brian Zajac from [Unsplash](https://unsplash.com/photos/outdoor-pickleball-courts-surrounded-by-trees-and-grass-cNuo2I6bznQ) under the [Unsplash License](https://unsplash.com/license); it does not depict the demo venues.
-
-## Folder structure
-
-```text
-peakpickle/
-├── client/
-│   ├── public/
-│   │   ├── peakpickle-logo.png
-│   │   └── pickleball-courts.jpg
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/           # Controls, forms, tables, charts, dialogs, toasts
-│   │   │   ├── layout/       # Desktop sidebar, header, responsive drawer, brand
-│   │   │   ├── courts/
-│   │   │   ├── queue/
-│   │   │   ├── players/
-│   │   │   └── matches/
-│   │   ├── pages/            # All requested routes
-│   │   ├── hooks/            # useApi, useCourtAvailability, useLiveQueue, useMutation
-│   │   ├── schemas/          # External Zod form schemas and inferred types
-│   │   ├── services/api.ts   # Single Axios instance
-│   │   ├── types/
-│   │   ├── utils/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── styles.css        # Tailwind import/theme/utilities and responsive styling
-│   ├── .env.example
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
-├── server/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── models/           # Six timestamped Mongoose collections
-│   │   ├── routes/
-│   │   ├── services/         # Processing algorithms and transactional coordination
-│   │   ├── utils/
-│   │   ├── seed/             # Atlas seeding and temporary local demo
-│   │   ├── app.ts
-│   │   └── server.ts
-│   ├── tests/api.test.mjs
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
-├── screenshots/       # Images shown in this README
-├── tests/responsive.spec.ts
-├── playwright.config.ts
-├── package.json
-├── package-lock.json
-├── .gitignore
-└── README.md
-```
-
-## Install
-
-Use **Node.js 24**, or Node.js 22.18+ (native TypeScript config loading). Install Git and create a MongoDB Atlas database user and IP access-list entry for your machine. Use a dedicated database such as `peakpickle`. Atlas supports the transactions used by the booking/queue/result services; a standalone local MongoDB server does not. A local replica set is supported.
-
-Run from the `peakpickle` folder:
+Use Node.js 24 and run commands from the project root.
 
 ```powershell
-npm install
-Copy-Item server/.env.example server/.env
-Copy-Item client/.env.example client/.env
+npm.cmd ci
 ```
 
-On macOS/Linux use `cp` instead of `Copy-Item`. Edit `server/.env` with your own Atlas connection string. Do not publish the real environment files.
+If private environment files do not exist, copy `server/.env.example` to `server/.env` and `client/.env.example` to `client/.env`. Preserve existing configuration.
 
-### Required environment values
-
-`server/.env`:
+Configure these values privately:
 
 ```dotenv
+# server/.env
+MONGO_URI=mongodb+srv://DATABASE_USER:ENCODED_PASSWORD@CLUSTER_HOST/peakpickle?retryWrites=true&w=majority
+JWT_SECRET=YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
 PORT=5000
-MONGO_URI=mongodb+srv://YOUR_USER:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/peakpickle?retryWrites=true&w=majority
 CLIENT_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
 BUSINESS_TIMEZONE=Asia/Manila
 ```
 
-`client/.env`:
+Use your actual Atlas connection string and intended database name. The current local connection uses the Atlas database `test`, which contains the imported samples. Changing the database name selects a different database; it does not move those records.
 
 ```dotenv
-VITE_API_URL=http://localhost:5000/api
+# client/.env
+VITE_API_URL=
 ```
 
-Encode reserved characters in the Atlas password. Use your actual cluster hostname. `MONGO_URI` is deliberately empty in the committed example. The client environment was configured locally for preview but is ignored by Git.
+A blank API URL uses the browser's hostname and backend port 5000 automatically. Keep the same hostname when opening the app. Do not put secrets in frontend variables.
 
-### Seed MongoDB Atlas
+In Atlas, create a database user, allow your public IP address, and use the cluster's Node.js connection string. Replace placeholders and percent-encode reserved characters in the password.
 
-After choosing the dedicated database, run:
+Start the backend:
 
 ```powershell
-npm run seed -- --confirm
+npm.cmd run dev:server
 ```
 
-This replaces records in PeakPickle's six collections, not the whole database. The explicit flag prevents accidental seeding. Seed dates are relative to today's Manila date so the demonstration stays current.
-
-Seed counts: **20 players, 6 courts, 35 reservations, 14 queue entries, 47 matches, 42 results**. All relationships use valid ObjectIds. Five courts are open; the sixth is under maintenance. There are active waiting players, one ongoing match, scheduled matches, completed games, and recorded scores.
-
-### Run the backend
-
-Terminal 1:
+Wait for `MongoDB connected`, then start the frontend in a second terminal:
 
 ```powershell
-npm run dev:server
+npm.cmd run dev:client
 ```
 
-The API runs on port 5000. It exits with a clear setup message if `MONGO_URI` is missing; it does not silently substitute demo data for Atlas.
+Open http://localhost:5173. New records save to the configured Atlas database and remain after restarting the backend. Deployment is not required.
 
-### Run the frontend
+### First admin
 
-Terminal 2:
+For a fresh database without an admin, temporarily set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in private `server/.env`, with `LINK_PLAYER_ID` blank. Use a password of 12–128 characters.
 
 ```powershell
-npm run dev:client
+npm.cmd run create-admin --workspace server
 ```
 
-Open `http://127.0.0.1:5173` (or `http://localhost:5173`).
+Remove the provisioning variables afterward. This script does not overwrite existing accounts.
 
-### Temporary demo without Atlas credentials
+### Temporary demo and seed safety
+
+`npm.cmd run demo` starts a separate temporary database with sample accounts. Its data resets when stopped; it never uses Atlas. Do not run it alongside the Atlas backend on port 5000.
+
+The standalone seed script deletes sports records. Do not run it against the current Atlas database to add samples. Recovery files and private backups are excluded from Git and must remain local.
+
+See [LOCAL_AUTH_SETUP.md](LOCAL_AUTH_SETUP.md) for demo credentials, account linking, permissions, and detailed setup.
+
+## Pages and structure
+
+Public pages: `/`, `/login`, and `/signup`.
+
+Signed-in pages include `/dashboard` (role redirect), `/admin/dashboard`, `/member/dashboard`, `/activity`, `/courts`, `/reservations`, `/queue`, `/players/:id`, `/matchmaking`, `/matches`, and `/rankings`, plus detail/edit pages. Player management at `/players` and club statistics at `/statistics` are admin-only.
+
+- `client/src/`: pages, components, forms, hooks, authentication, and API integration.
+- `server/src/`: routes, models, controllers, middleware, services, and seed/provisioning scripts.
+- `server/tests/` and `tests/`: backend integration and browser tests.
+- `screenshots/`: application screenshots.
+
+## Screenshots
+
+These screenshots show the original application layout.
+
+![Club dashboard](screenshots/dashboard-desktop.jpg)
+![Landing page](screenshots/landing-desktop.jpg)
+![Live queue](screenshots/queue-desktop.jpg)
+![Mobile reservations](screenshots/reservations-mobile.jpg)
+
+The logo was supplied for the project. Court photography is credited to Brian Zajac on [Unsplash](https://unsplash.com/photos/outdoor-pickleball-courts-surrounded-by-trees-and-grass-cNuo2I6bznQ).
+
+## Checks
 
 ```powershell
-npm run demo
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd test
 ```
 
-Run the frontend in another terminal. This starts a **real temporary MongoDB replica set**, seeds it, and serves the same Express API on port 5000. It is only a convenience for local demonstrations/testing: **data resets when stopped** and this mode does not satisfy the permanent Atlas storage requirement by itself. Stop the Atlas API before starting the demo on the same port. The first run downloads an official MongoDB test binary and needs internet access; later runs reuse it.
+For browser tests, start a fresh temporary demo and the frontend, then run `npm.cmd run test:ui`. Use the temporary demo for automated browser tests rather than the presentation database.
 
-### Build and verify
+The local implementation review recorded 34 passing backend tests, 16 passing browser tests, and successful type checks/builds. The later Atlas import validated all 184 records and initialized indexes successfully. See [LOCAL_REVIEW.md](LOCAL_REVIEW.md) for the implementation test report.
 
-```powershell
-npm run typecheck
-npm run build
-npm test
-```
+## Known limitations
 
-Production API after build: `npm run start --workspace server`.
+- Localhost only; no deployment configuration.
+- No password reset, refresh tokens, payments, uploads, or automatic notifications.
+- Queue updates poll every 15 seconds; wait estimates are approximate.
+- Admins update reservation statuses explicitly.
+- Referenced courts/players are preserved through maintenance/deactivation.
+- Recovered extra records may include automated test data.
+- Each member must understand their contribution and use their own account for meaningful commits.
 
-Production client preview: `npm run preview --workspace client` (port 4173 by default; add that origin to `CLIENT_ORIGIN` when using the Atlas API).
+## Repository hygiene
 
-For UI tests, start the seeded temporary demo API and frontend first:
+Do not commit `.env`, credentials, dependencies, build output, test reports, logs, MongoDB binaries, or `local-mongo-recovery/`. Commit only placeholder `.env.example` files.
 
-```powershell
-npx playwright install chromium
-npm run test:ui
-```
+## API documentation
 
-To use an installed Edge browser on Windows, set `PEAKPICKLE_BROWSER_PATH` to its executable before `npm run test:ui`. The browser suite expects the seeded demo IDs and unmodified 17:00 reservations. The backend integration suite passed during implementation; run `npm test` to verify this checkout.
+All paths below use the `/api` prefix. Protected endpoints require an authenticated cookie. Mutations require the CSRF token fetched by the configured Axios client. Roles and ownership restrict sports operations.
 
-## Routes
-
-```text
-/
-/dashboard
-/courts
-/courts/:id
-/reservations
-/reservations/new
-/reservations/:id/edit
-/queue
-/players
-/players/:id
-/matchmaking
-/matches
-/matches/:id
-/rankings
-/statistics
-```
-
-## Processing and relationships
-
-`Player` and `Court` are referenced by `Reservation`, `QueueEntry`, and `Match`. `MatchResult` references its match and winning players. Every schema enables timestamps. Optional player availability extends the required player fields so compatibility can be computed from actual records. Match queue-entry references let result processing complete the correct queue entries.
-
-1. **Availability:** a pending/confirmed reservation overlaps when `newStart < existingEnd && newEnd > existingStart`. Adjacent times are legal. Check active player, existing court, maintenance, time order, and operating hours. Editing excludes its own reservation ID. Court transactions prevent concurrent requests from both claiming a slot.
-2. **FCFS queue:** sort joinedAt ascending, then ObjectId for ties. Position and players-ahead are computed each time. Estimated wait = players ahead × average completed match duration, with a 15-minute starting fallback. Active playing entries remain ahead until their game finishes. Elapsed wait is shown separately and updates every 15 seconds. Queue groups support singles (two players) and doubles (four players). The first two called players form Team A in doubles; the next two form Team B. Called entries retain their play type so skipped players can be replaced without starting an incomplete doubles game. Both queue and new-match forms default to doubles; callers omitting playType retain the existing singles API behavior.
-
-   Both queue and scheduled matches can start only during operating hours. A pending or confirmed reservation covering the current time blocks the start unless its booking holder is participating. This validates the start time; matches have no fixed end time. Existing reservations and scheduled matches can still be cancelled after a player is deactivated, and scheduled matches can be cancelled after court maintenance begins. Next court availability checks future bookings when today's operating hours are exhausted.
-3. **Matching:** same skill +60, compatible available time +30, same preferred play +10, maximum 100. Sort highest first. `both` is a distinct preference for scoring; an `any` time filter is compatible with all available slots.
-4. **Rankings:** include completed matches with results. Count participation, wins and losses; win rate = wins / completed matches × 100, or zero when there are no matches. Sort wins descending, then win rate descending.
-5. **Statistics:** derive counts, positive elapsed match durations, court usage counts, last-seven-day completions, and start-hour distributions. Dashboard adds today's activity and upcoming bookings. Time boundaries use Manila.
-6. **Transitions/results:** reject invalid transitions with 400. Recording an ongoing match's result derives winners and atomically completes the match/queue and releases the court. Court and referenced-player document writes prevent races between conflicting operations across requests.
-
-The request/response examples and all 35 endpoints are in the API table below. The rules above summarize the processing algorithms.
-
-## Responsive design
-
-One React application uses CSS media queries and Tailwind theme tokens. Desktop at 1440/1280 keeps the full sidebar, wide tables, four statistics cards, four player cards, three court cards, and two chart columns. At 1024 the sidebar remains usable, courts reduce to two columns, and players to three. At 768 the sidebar becomes a drawer while grid/table content remains readable. At 375 navigation uses a hamburger, forms and content cards stack, and tables become labeled record rows. There is no separate mobile application or bottom app-tab shell.
-
-## Known limitations and submission tasks
-
-- Atlas configuration and a live Atlas connectivity check remain dependent on your private credentials; integration testing uses a real local replica set.
-- The supplied group identifiers are recorded. Full names if required, actual contributions, member-owned commits, and Teams submission still require your real class/account information.
-- Authentication, payments, file uploads, automatic notifications, and public deployment are outside the requested core. This is a shared management workspace.
-- Queue updates poll every 15 seconds. Wait/finish estimates are predictions, not guarantees; the formula treats each preceding player as one average match duration as requested.
-- Reservations are completed/cancelled explicitly, not by a background job. Historic records may remain pending/confirmed until a manager updates them.
-- Courts/players with historical references cannot be deleted; use maintenance/deactivation to preserve relationships. Reservations and non-ongoing matches support actual deletion with confirmation.
-- Result scores require distinct nonnegative integers up to 99. The project does not enforce an official tournament scoring format because none was specified.
-- The current dataset is sized for an academic demo. Large clubs would benefit from pagination, aggregation pipelines, role-based access, and scheduled notifications.
-
-## Git and GitHub
-
-The folder is initialized as a Git repository on `main`. The ignore file excludes dependencies, real environments, compiled output, test artifacts, and MongoDB binaries. No author identity or member commits were fabricated.
-
-Each member should set their own Git identity, contribute explainable changes, and commit their own work. For later updates:
-
-```powershell
-git add .
-git commit -m "Describe your actual changes"
-git push
-```
-
-The repository is public. Complete the member table with actual contributions before final submission.
-
-## API endpoint table
-
-The following table covers all 35 endpoints.
-
-| Method | Path                                       | Purpose                                                                         | Sample request                                                    | Sample response                                                                                                                                  |
-| ------ | ------------------------------------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Method | Path | Purpose | Sample request | Sample response |
+| --- | --- | --- | --- | --- |
+| GET | /auth/csrf | Obtain mutation token | None | `{ "csrfToken": "..." }` |
+| POST | /auth/signup | Register member and linked player | `{ "name": "Example Member", "email": "member@example.com", "password": "PRIVATE_PASSWORD" }` | `{ "message": "Member account created" }` |
+| POST | /auth/login | Start cookie session | `{ "email": "member@example.com", "password": "PRIVATE_PASSWORD" }` | `{ "message": "Logged in" }` |
+| GET | /auth/me | Current account and own profile | None | Account role and player data |
+| POST | /auth/logout | Invalidate account sessions | None | `{ "message": "All sessions for this account have been logged out." }` |
+| GET | /public/courts | Public court information | None | Sanitized court list |
+| GET | /public/rankings | Public rankings | None | Sanitized rankings |
+| GET | /public/summary | Public club totals | None | Public summary |
 | GET    | /health                                    | API health                                                                      | None                                                              | `{ "status": "ok", "application": "PeakPickle" }`                                                                                                |
 | GET    | /players                                   | Players with computed stats; filter search, skillLevel, preferredPlay           | `?search=Miguel&skillLevel=intermediate`                          | `[ { "_id": "...", "name": "Miguel Santos", "wins": 3, "losses": 1, "matchesPlayed": 4, "winRate": 75, "rank": 1 } ]`                            |
 | GET    | /players/matches                           | Compute 60/30/10 matching score                                                 | `?skillLevel=intermediate&playType=doubles&availableTime=evening` | `[ { "name": "Miguel Santos", "matchPercentage": 100, "matchingReason": "Same skill level · Compatible availability · Same play preference" } ]` |
@@ -299,11 +188,11 @@ The following table covers all 35 endpoints.
 | GET    | /queue-entries                             | Queue history; courtId/status filters                                           | `?courtId=...&status=waiting`                                     | Array of populated queue entries                                                                                                                 |
 | GET    | /queue-entries/summary                     | FCFS positions, estimated waits, current match, average duration                | `?courtId=...` (optional)                                         | `[ { "court": {}, "entries": [], "waitingCount": 6, "averageMatchDuration": 15, "currentMatch": null } ]`                                        |
 | POST   | /queue-entries                             | Join an active queue once                                                       | `{ "playerId": "...", "courtId": "..." }`                         | Queue entry, initially waiting                                                                                                                   |
-| PATCH  | /queue-entries/:id                         | Valid transition; call only oldest waiter                                       | `{ "status": "cancelled" }`                                       | Updated entry; playing starts the called group's match                                                                                            |
+| PATCH  | /queue-entries/:id                         | Valid transition; call only oldest waiter                                       | `{ "status": "cancelled" }`                                       | Updated entry; playing starts the called group's match                                                                                           |
 | DELETE | /queue-entries/:id                         | Delete waiting/terminal entry; protect called/playing                           | None                                                              | `{ "message": "Queue entry deleted successfully." }`                                                                                             |
-| POST   | /queue-entries/courts/:courtId/call-next   | Call oldest two or four waiting players                                                 | `{ "playType": "doubles" }`                                        | Two or four entries with status called                                                                                                                   |
-| POST   | /queue-entries/courts/:courtId/start-match | Start called group and occupy court atomically                                   | No body                                                           | Populated ongoing match                                                                                                                          |
-| GET    | /matches                                   | Match list with results; search/status/playType/courtId/playerId filters                 | `?status=completed&playType=singles`                              | Array of populated matches with result                                                                                                           |
+| POST   | /queue-entries/courts/:courtId/call-next   | Call oldest two or four waiting players                                         | `{ "playType": "doubles" }`                                       | Two or four entries with status called                                                                                                           |
+| POST   | /queue-entries/courts/:courtId/start-match | Start called group and occupy court atomically                                  | No body                                                           | Populated ongoing match                                                                                                                          |
+| GET    | /matches                                   | Match list with results; search/status/playType/courtId/playerId filters        | `?status=completed&playType=singles`                              | Array of populated matches with result                                                                                                           |
 | GET    | /matches/:id                               | Match scorecard with result                                                     | Valid ObjectId                                                    | Match document with players, court, result                                                                                                       |
 | POST   | /matches                                   | Schedule singles or doubles                                                     | Match example below                                               | Scheduled match                                                                                                                                  |
 | PATCH  | /matches/:id                               | Edit scheduled match or start/cancel                                            | `{ "status": "ongoing" }`                                         | Updated match                                                                                                                                    |

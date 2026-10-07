@@ -1,3 +1,4 @@
+import { useAuth } from '../auth';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Pencil, Play, Trophy, Trash2 } from 'lucide-react';
@@ -18,6 +19,8 @@ import {
 import { MatchForm, ResultForm } from '../components/ui/EntityForms';
 import { capitalize, dateLabel, timeLabel, teamNames } from '../utils/format';
 export function MatchDetailPage() {
+  const { account } = useAuth();
+  const admin = account?.role === 'admin';
   const { id } = useParams();
   const navigate = useNavigate();
   const state = useApi<Match>(`/matches/${id}`);
@@ -48,40 +51,46 @@ export function MatchDetailPage() {
           <>
             <div className="detail-heading">
               <StatusBadge status={match.status} />
-              <div className="page-actions">
-                {match.status === 'scheduled' && (
-                  <>
-                    <Button variant="secondary" onClick={() => setEdit(true)}>
-                      <Pencil size={15} />
-                      Edit Match
-                    </Button>
+              {admin && (
+                <div className="page-actions">
+                  {match.status === 'scheduled' && (
+                    <>
+                      <Button variant="secondary" onClick={() => setEdit(true)}>
+                        <Pencil size={15} />
+                        Edit Match
+                      </Button>
+                      <Button
+                        busy={mutation.busy}
+                        onClick={() =>
+                          mutation.run(
+                            () => api.patch(`/matches/${match._id}`, { status: 'ongoing' }),
+                            'Match started successfully.',
+                            () => void state.refetch(),
+                          )
+                        }
+                      >
+                        <Play size={15} />
+                        Start Match
+                      </Button>
+                      <Button variant="ghost" onClick={() => setCancel(true)}>
+                        Cancel Match
+                      </Button>
+                    </>
+                  )}
+                  {match.status === 'ongoing' && (
+                    <Button onClick={() => setResult(true)}>Record Result</Button>
+                  )}
+                  {match.status !== 'ongoing' && (
                     <Button
-                      busy={mutation.busy}
-                      onClick={() =>
-                        mutation.run(
-                          () => api.patch(`/matches/${match._id}`, { status: 'ongoing' }),
-                          'Match started successfully.',
-                          () => void state.refetch(),
-                        )
-                      }
+                      variant="ghost"
+                      aria-label="Delete match"
+                      onClick={() => setRemove(true)}
                     >
-                      <Play size={15} />
-                      Start Match
+                      <Trash2 size={17} />
                     </Button>
-                    <Button variant="ghost" onClick={() => setCancel(true)}>
-                      Cancel Match
-                    </Button>
-                  </>
-                )}
-                {match.status === 'ongoing' && (
-                  <Button onClick={() => setResult(true)}>Record Result</Button>
-                )}
-                {match.status !== 'ongoing' && (
-                  <Button variant="ghost" aria-label="Delete match" onClick={() => setRemove(true)}>
-                    <Trash2 size={17} />
-                  </Button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
             <Card className="scorecard">
               <div className="scorecard-top">

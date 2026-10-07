@@ -377,11 +377,13 @@ export function ConfirmDialog({
   onClose,
   onConfirm,
   busy,
+  confirmLabel = 'Delete',
 }: {
   title: string;
   onClose: () => void;
   onConfirm: () => void;
   busy?: boolean;
+  confirmLabel?: string;
 }) {
   return (
     <Modal title={title} onClose={busy ? () => {} : onClose}>
@@ -396,7 +398,7 @@ export function ConfirmDialog({
           Cancel
         </Button>
         <Button variant="danger" busy={busy} onClick={onConfirm}>
-          Delete
+          {confirmLabel}
         </Button>
       </div>
     </Modal>
