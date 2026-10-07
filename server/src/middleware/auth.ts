@@ -51,7 +51,11 @@ export const csrf: RequestHandler = (req, res, next) => {
   if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     const origin = req.get('origin');
     assert(
-      !origin || ['http://localhost:5173', 'http://127.0.0.1:5173'].includes(origin),
+      !origin ||
+        (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173')
+          .split(',')
+          .map((value) => value.trim())
+          .includes(origin),
       'Untrusted request origin',
       403,
     );

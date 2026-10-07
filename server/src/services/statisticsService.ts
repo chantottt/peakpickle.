@@ -6,6 +6,31 @@ import { Match } from '../models/Match.js';
 import { averageDuration } from './queueService.js';
 import { localDate, localHour, today, toMinutes } from '../utils/time.js';
 import { matchesWithResults } from './matchService.js';
+export async function publicSummary() {
+  const [totalPlayers, courtsOpen, courtsAvailable, matchesToday, playersInQueue, totalMatches] =
+    await Promise.all([
+      Player.countDocuments({ isActive: true }),
+      Court.countDocuments({ status: { $ne: 'maintenance' } }),
+      Court.countDocuments({ status: 'available' }),
+      Match.countDocuments({
+        $expr: {
+          $eq: [
+            {
+              $dateToString: {
+                format: '%Y-%m-%d',
+                date: '$scheduledAt',
+                timezone: process.env.BUSINESS_TIMEZONE || 'Asia/Manila',
+              },
+            },
+            today(),
+          ],
+        },
+      }),
+      QueueEntry.countDocuments({ status: { $in: ['waiting', 'called'] } }),
+      Match.countDocuments({ status: 'completed' }),
+    ]);
+  return { totalPlayers, courtsOpen, courtsAvailable, matchesToday, playersInQueue, totalMatches };
+}
 export async function statistics() {
   const [courts, matches, players, queue, averageMatchDuration] = await Promise.all([
     Court.find().lean(),
@@ -74,7 +99,7 @@ export async function dashboard() {
   const [summary, courts, recentMatches, upcomingReservations] = await Promise.all([
     statistics(),
     Court.find().sort({ courtNumber: 1 }).lean(),
-    matchesWithResults({ status: 'completed' }),
+    matchesWithResults({ status: 'completed' }, { limit: 5 }),
     Reservation.find({
       status: { $in: ['pending', 'confirmed'] },
       reservationDate: { $gte: today() },
@@ -84,5 +109,5 @@ export async function dashboard() {
       .limit(5)
       .lean(),
   ]);
-  return { ...summary, courts, recentMatches: recentMatches.slice(0, 5), upcomingReservations };
+  return { ...summary, courts, recentMatches, upcomingReservations };
 }

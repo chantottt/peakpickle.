@@ -1,5 +1,5 @@
 import { useAuth } from '../auth';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useMutation } from '../hooks/useMutation';
@@ -13,20 +13,29 @@ import {
   DataState,
   EmptyState,
   Modal,
+  Pagination,
 } from '../components/ui';
 import { MatchForm, ResultForm } from '../components/ui/EntityForms';
 import { MatchCard } from '../components/matches/MatchCard';
 import { capitalize, queryString } from '../utils/format';
 export function MatchesPage() {
+  const pageSize = 9;
   const { account } = useAuth();
   const admin = account?.role === 'admin';
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [playType, setPlay] = useState('');
+  const [page, setPage] = useState(1);
   const [create, setCreate] = useState(false);
   const [result, setResult] = useState<Match | null>(null);
   const mutation = useMutation();
-  const state = useApi<Match[]>(`/matches?${queryString({ search, status, playType })}`);
+  const state = useApi<Match[]>(
+    `/matches?${queryString({ search, status, playType, page: String(page), pageSize: String(pageSize) })}`,
+  );
+  const visibleMatches = state.data || [];
+  useEffect(() => {
+    if (!state.loading && state.data?.length === 0 && page > 1) setPage(page - 1);
+  }, [state.loading, state.data, page]);
   return (
     <>
       <PageHeader
@@ -42,11 +51,21 @@ export function MatchesPage() {
         }
       />
       <div className="filters">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search players or courts…" />
+        <SearchBar
+          value={search}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          placeholder="Search players or courts…"
+        />
         <FilterSelect
           label="All Status"
           value={status}
-          onChange={setStatus}
+          onChange={(value) => {
+            setStatus(value);
+            setPage(1);
+          }}
           options={['scheduled', 'ongoing', 'completed', 'cancelled'].map((value) => ({
             value,
             label: capitalize(value),
@@ -55,13 +74,16 @@ export function MatchesPage() {
         <FilterSelect
           label="All Play Types"
           value={playType}
-          onChange={setPlay}
+          onChange={(value) => {
+            setPlay(value);
+            setPage(1);
+          }}
           options={['singles', 'doubles'].map((value) => ({ value, label: capitalize(value) }))}
         />
       </div>
       <DataState {...state} hasData={!!state.data} onRetry={state.refetch}>
         <div className="match-list">
-          {state.data?.map((match) => (
+          {visibleMatches.map((match) => (
             <MatchCard
               key={match._id}
               match={match}
@@ -80,6 +102,7 @@ export function MatchesPage() {
             />
           ))}
         </div>
+        <Pagination page={page} hasNext={state.hasNext} onChange={setPage} />
         {state.data?.length === 0 && (
           <EmptyState
             title="No matches found"

@@ -1,9 +1,10 @@
 import type { RequestHandler } from 'express';
 import { Reservation } from '../models/Reservation.js';
 import { assert } from '../utils/errors.js';
-import { validateId, dateSchema, parse } from '../utils/validation.js';
+import { validateId, dateSchema, parse, pagination } from '../utils/validation.js';
 import { saveReservation } from '../services/reservationService.js';
 import { courtTransaction } from '../services/courtLock.js';
+import { searchPlayerAndCourtIds } from '../services/searchService.js';
 export const list: RequestHandler = async (req, res) => {
   const filter: Record<string, unknown> = {};
   if (req.query.courtId) filter.courtId = validateId(String(req.query.courtId));
@@ -11,17 +12,17 @@ export const list: RequestHandler = async (req, res) => {
   if (req.account?.role === 'member') filter.playerId = req.account.playerId;
   if (req.query.status) filter.status = String(req.query.status);
   if (req.query.date) filter.reservationDate = parse(dateSchema, req.query.date);
-  const rows = await Reservation.find(filter)
+  const search = await searchPlayerAndCourtIds(String(req.query.search || ''));
+  if (search)
+    filter.$or = [{ playerId: { $in: search.players } }, { courtId: { $in: search.courts } }];
+  const window = pagination(req.query.page, req.query.pageSize);
+  const query = Reservation.find(filter)
     .populate(['playerId', 'courtId'])
-    .sort({ reservationDate: -1, startTime: 1 })
-    .lean();
-  const search = String(req.query.search || '').toLowerCase();
-  res.json(
-    rows.filter(
-      (row) =>
-        !search || JSON.stringify([row.playerId, row.courtId]).toLowerCase().includes(search),
-    ),
-  );
+    .sort({ reservationDate: -1, startTime: 1, _id: -1 });
+  if (window) query.skip(window.skip).limit(window.limit);
+  const rows = await query.lean();
+  if (window) res.set('X-Has-Next', String(rows.length > window.pageSize));
+  res.json(window ? rows.slice(0, window.pageSize) : rows);
 };
 export const detail: RequestHandler = async (req, res) => {
   const row = await Reservation.findById(validateId(String(req.params.id))).populate([

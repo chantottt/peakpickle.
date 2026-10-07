@@ -12,6 +12,7 @@ import {
   Clock3,
 } from 'lucide-react';
 import { Brand } from '../components/layout/Brand';
+import { useAuth } from '../auth';
 import { Avatar, Badge, DataState, EmptyState, Button } from '../components/ui';
 import { CourtCard } from '../components/courts/CourtCard';
 import { useApi } from '../hooks/useApi';
@@ -20,12 +21,13 @@ import { capitalize } from '../utils/format';
 const links = [
   { to: '/', label: 'Home' },
   { to: '/courts', label: 'Courts' },
-  { to: '/players', label: 'Players' },
+  { to: '/players', label: 'Players', adminOnly: true },
   { to: '/matches', label: 'Matches' },
   { to: '/rankings', label: 'Rankings' },
   { to: '/dashboard', label: 'Dashboard' },
 ];
 export function LandingPage() {
+  const { account } = useAuth();
   const [menu, setMenu] = useState(false);
   const courts = useApi<Court[]>('/public/courts');
   const rankings = useApi<Player[]>('/public/rankings');
@@ -35,23 +37,35 @@ export function LandingPage() {
       <header className="landing-navbar">
         <div className="site-container nav-inner">
           <Brand />
-          <nav aria-label="Main navigation" className={menu ? 'landing-nav open' : 'landing-nav'}>
-            {links.map((link) => (
-              <Link className={link.to === '/' ? 'active' : ''} key={link.to} to={link.to}>
-                {link.label}
-              </Link>
-            ))}
+          <nav
+            id="landing-navigation"
+            aria-label="Main navigation"
+            className={menu ? 'landing-nav open' : 'landing-nav'}
+          >
+            {links
+              .filter((link) => !link.adminOnly || account?.role === 'admin')
+              .map((link) => (
+                <Link className={link.to === '/' ? 'active' : ''} key={link.to} to={link.to}>
+                  {link.label}
+                </Link>
+              ))}
           </nav>
-          <Link className="button button-primary nav-reserve" to="/reservations/new">
-            <CalendarDays size={17} />
-            Reserve Court
-          </Link>
+          <div className="landing-nav-actions">
+            <Link className="button button-secondary nav-login" to="/login">
+              Log in
+            </Link>
+            <Link className="button button-primary nav-reserve" to="/reservations/new">
+              <CalendarDays size={17} />
+              Reserve Court
+            </Link>
+          </div>
           <Button
             className="landing-menu-button"
             variant="ghost"
             onClick={() => setMenu(!menu)}
             aria-label={menu ? 'Close navigation' : 'Open navigation'}
             aria-expanded={menu}
+            aria-controls="landing-navigation"
           >
             {menu ? <X size={22} /> : <Menu size={22} />}
           </Button>
@@ -254,7 +268,7 @@ export function LandingPage() {
           <div>
             <strong>Play</strong>
             <Link to="/courts">Courts</Link>
-            <Link to="/players">Players</Link>
+            {account?.role === 'admin' && <Link to="/players">Players</Link>}
             <Link to="/matchmaking">Find a match</Link>
           </div>
           <div>

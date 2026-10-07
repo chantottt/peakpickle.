@@ -299,6 +299,46 @@ test('all read endpoints return real MongoDB records and populated relationships
   assert.equal(detail.body.playerId.name, 'Miguel Santos');
   await request(app).get('/api/health').expect(200);
 });
+test('paged lists keep their sort and filters while the public summary matches analytics', async () => {
+  for (const resource of ['reservations', 'matches']) {
+    const all = (await request(app).get(`/api/${resource}`).expect(200)).body;
+    const first = await request(app).get(`/api/${resource}?page=1&pageSize=5`).expect(200);
+    const second = await request(app).get(`/api/${resource}?page=2&pageSize=5`).expect(200);
+    assert.equal(first.headers['x-has-next'], 'true');
+    assert.deepEqual(
+      first.body.map((row) => row._id),
+      all.slice(0, 5).map((row) => row._id),
+    );
+    assert.deepEqual(
+      second.body.map((row) => row._id),
+      all.slice(5, 10).map((row) => row._id),
+    );
+    const searched = await request(app)
+      .get(`/api/${resource}?search=Miguel&page=1&pageSize=5`)
+      .expect(200);
+    assert.ok(searched.body.length > 0);
+    assert.ok(
+      searched.body.every((row) =>
+        resource === 'reservations'
+          ? row.playerId.name.includes('Miguel')
+          : row.players.some((player) => player.name.includes('Miguel')),
+      ),
+    );
+    await request(app).get(`/api/${resource}?page=0&pageSize=5`).expect(400);
+    await request(app).get(`/api/${resource}?page=1&pageSize=51`).expect(400);
+  }
+  const publicSummary = (await rawRequest(app).get('/api/public/summary').expect(200)).body;
+  const analytics = (await request(app).get('/api/statistics').expect(200)).body;
+  for (const key of [
+    'totalPlayers',
+    'courtsOpen',
+    'courtsAvailable',
+    'matchesToday',
+    'playersInQueue',
+    'totalMatches',
+  ])
+    assert.equal(publicSummary[key], analytics[key], key);
+});
 test('player CRUD, duplicate email validation, filters and safe related-record deletes', async () => {
   const payload = {
     name: 'Test Player',

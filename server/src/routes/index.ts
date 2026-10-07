@@ -2,7 +2,7 @@ import { authenticate, csrf, adminOnly } from '../middleware/auth.js';
 import { permissions, safeFields } from '../middleware/permissions.js';
 import { authRouter } from './auth.js';
 import { Court } from '../models/Court.js';
-import { statistics as publicStatistics } from '../services/statisticsService.js';
+import { publicSummary } from '../services/statisticsService.js';
 import { Router } from 'express';
 import * as players from '../controllers/playerController.js';
 import * as courts from '../controllers/courtController.js';
@@ -53,15 +53,7 @@ apiRouter.get('/public/rankings', async (_req, res) => {
   res.json(safeFields(await rankings()));
 });
 apiRouter.get('/public/summary', async (_req, res) => {
-  const stats = await publicStatistics();
-  res.json({
-    totalPlayers: stats.totalPlayers,
-    courtsOpen: stats.courtsOpen,
-    courtsAvailable: stats.courtsAvailable,
-    matchesToday: stats.matchesToday,
-    playersInQueue: stats.playersInQueue,
-    totalMatches: stats.totalMatches,
-  });
+  res.json(await publicSummary());
 });
 apiRouter.use(csrf);
 apiRouter.use('/auth', authRouter);

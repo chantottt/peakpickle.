@@ -23,6 +23,8 @@ Public signup creates member accounts only. Admin accounts are created through t
 - Player matching: skill 60%, availability 30%, and play preference 10%.
 - Match results, rankings, and club statistics computed from database records.
 - Responsive pages, form validation, loading/error states, and action feedback.
+- Login/signup forms show field errors, and a guest who opens a protected page returns there after signing in.
+- Reservation and match lists page through filtered results; the public summary uses database counts.
 
 Original sample data and recoverable extra demo records have been imported into Atlas. Existing Atlas records were preserved. Temporary demo data does not automatically transfer to Atlas.
 
@@ -32,13 +34,13 @@ React, Vite, TypeScript, Tailwind CSS, React Router, React Hook Form, Zod, Axios
 
 ## Group members
 
-Fill in each member's actual contribution and GitHub account before submission.
+The contribution descriptions below are based on local commit history. Each member should verify their row and GitHub account before submission.
 
 | Member | Contribution | GitHub account |
 | --- | --- | --- |
-| chantottt | To be completed | To be completed |
+| chantottt | Initial PeakPickle project, README, and application screenshots | chantottt |
 | Ejay Balsamo | Log in/Sign up, MongoDB set up, Client/Server | smurfdei28 |
-| surla-nicko | To be completed | To be completed |
+| surla-nicko | My Activity, queue wait indicators and doubles queues; cancellation, match-start, and court availability fixes | surla-nicko |
 
 ## Local setup
 
@@ -68,7 +70,7 @@ Use your actual Atlas connection string and intended database name. The current 
 VITE_API_URL=
 ```
 
-A blank API URL uses the browser's hostname and backend port 5000 automatically. Keep the same hostname when opening the app. Do not put secrets in frontend variables.
+A blank API URL uses the browser's hostname and backend port 5000 automatically. Set `VITE_API_PORT` to use a different local backend port while keeping the browser's hostname, including for cookie-based login. Keep the same hostname when opening the app. Do not put secrets in frontend variables.
 
 In Atlas, create a database user, allow your public IP address, and use the cluster's Node.js connection string. Replace placeholders and percent-encode reserved characters in the password.
 
@@ -98,7 +100,7 @@ Remove the provisioning variables afterward. This script does not overwrite exis
 
 ### Temporary demo and seed safety
 
-`npm.cmd run demo` starts a separate temporary database with sample accounts. Its data resets when stopped; it never uses Atlas. Do not run it alongside the Atlas backend on port 5000.
+`npm.cmd run demo` starts a separate temporary database with sample accounts. Its data resets when stopped; it never uses Atlas. Do not run it alongside the Atlas backend on port 5000. If port 5000 is occupied, set `DEMO_PORT` before starting the demo; set `CLIENT_ORIGIN` to the frontend's local URL(s) and `VITE_API_PORT` to the demo port for the frontend. The browser test runner also accepts `PEAKPICKLE_TEST_API_URL` and `PEAKPICKLE_TEST_FRONTEND_URL` for alternate demo ports.
 
 The standalone seed script deletes sports records. Do not run it against the current Atlas database to add samples. Recovery files and private backups are excluded from Git and must remain local.
 
@@ -108,7 +110,7 @@ See [LOCAL_AUTH_SETUP.md](LOCAL_AUTH_SETUP.md) for demo credentials, account lin
 
 Public pages: `/`, `/login`, and `/signup`.
 
-Signed-in pages include `/dashboard` (role redirect), `/admin/dashboard`, `/member/dashboard`, `/activity`, `/courts`, `/reservations`, `/queue`, `/players/:id`, `/matchmaking`, `/matches`, and `/rankings`, plus detail/edit pages. Player management at `/players` and club statistics at `/statistics` are admin-only.
+Signed-in pages include `/dashboard` (role redirect), `/admin/dashboard`, `/member/dashboard`, `/activity`, `/courts`, `/reservations`, `/queue`, `/players/:id`, `/matchmaking`, `/matches`, and `/rankings`, plus detail/edit pages. Player management at `/players` and club statistics at `/statistics` are admin-only. The public header offers Log in; the Players management link appears only for admins.
 
 - `client/src/`: pages, components, forms, hooks, authentication, and API integration.
 - `server/src/`: routes, models, controllers, middleware, services, and seed/provisioning scripts.
@@ -117,10 +119,12 @@ Signed-in pages include `/dashboard` (role redirect), `/admin/dashboard`, `/memb
 
 ## Screenshots
 
-These screenshots show the original application layout.
+These screenshots show the application at desktop and mobile sizes.
 
 ![Club dashboard](screenshots/dashboard-desktop.jpg)
 ![Landing page](screenshots/landing-desktop.jpg)
+![Login page](screenshots/auth-login-desktop.jpg)
+![Mobile signup](screenshots/auth-signup-mobile.jpg)
 ![Live queue](screenshots/queue-desktop.jpg)
 ![Mobile reservations](screenshots/reservations-mobile.jpg)
 
@@ -136,7 +140,7 @@ npm.cmd test
 
 For browser tests, start a fresh temporary demo and the frontend, then run `npm.cmd run test:ui`. Use the temporary demo for automated browser tests rather than the presentation database.
 
-The local implementation review recorded 34 passing backend tests, 16 passing browser tests, and successful type checks/builds. The later Atlas import validated all 184 records and initialized indexes successfully. See [LOCAL_REVIEW.md](LOCAL_REVIEW.md) for the implementation test report.
+The current backend suite has 35 tests, including pagination and public summary checks. Browser tests cover login/signup, role access, booking, and layouts down to 375px. The Atlas import previously validated all 184 records and initialized indexes successfully. See [LOCAL_REVIEW.md](LOCAL_REVIEW.md) for the earlier implementation review.
 
 ## Known limitations
 
@@ -155,6 +159,8 @@ Do not commit `.env`, credentials, dependencies, build output, test reports, log
 ## API documentation
 
 All paths below use the `/api` prefix. Protected endpoints require an authenticated cookie. Mutations require the CSRF token fetched by the configured Axios client. Roles and ownership restrict sports operations.
+
+`GET /reservations` and `GET /matches` accept optional `page` (starting at 1) and `pageSize` (1–50) query parameters. With paging, the response remains an array and the `X-Has-Next` response header is `true` or `false`; without paging, the full filtered array is returned for existing clients. Search is applied before paging.
 
 | Method | Path | Purpose | Sample request | Sample response |
 | --- | --- | --- | --- | --- |

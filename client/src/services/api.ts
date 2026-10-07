@@ -1,8 +1,10 @@
 import axios from 'axios';
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`,
+  baseURL: import.meta.env.VITE_API_PORT
+    ? `http://${window.location.hostname}:${import.meta.env.VITE_API_PORT}/api`
+    : import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`,
   withCredentials: true,
-  timeout: 15000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 export function errorMessage(error: unknown) {

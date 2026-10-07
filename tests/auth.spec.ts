@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { loginDemo } from './auth-helper';
+const apiBase = process.env.PEAKPICKLE_TEST_API_URL || 'http://127.0.0.1:5000/api';
+const localFrontendBase = (
+  process.env.PEAKPICKLE_TEST_FRONTEND_URL || 'http://127.0.0.1:5173'
+).replace('127.0.0.1', 'localhost');
 test('public landing renders sanitized courts and rankings without authentication', async ({
   page,
 }) => {
@@ -12,6 +16,25 @@ test('public landing renders sanitized courts and rankings without authenticatio
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('link', { name: 'Courts', exact: true }),
   ).toHaveAttribute('href', '/courts');
+});
+test('guest booking returns to the form after login and shows field errors', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.landing-navbar').getByRole('link', { name: 'Reserve Court' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel('Email', { exact: true }).fill('invalid-email');
+  await page.getByLabel('Password', { exact: true }).fill('short');
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page.getByText('Enter a valid email address.')).toBeVisible();
+  await expect(page.getByText('Use at least 12 characters.')).toBeVisible();
+  await page.getByRole('link', { name: 'Create an account' }).click();
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Log in', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel('Email', { exact: true }).fill('miguel.santos@peakpickle.demo');
+  await page.getByLabel('Password', { exact: true }).fill('PeakPickleDemo!2026');
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page).toHaveURL(/\/reservations\/new$/);
+  await expect(page.getByRole('heading', { name: 'New Court Reservation' })).toBeVisible();
 });
 test('admin login redirects, persists on refresh, and logout closes protected routes', async ({
   page,
@@ -81,19 +104,16 @@ test('signup creates a member and bookings show only that member', async ({ page
   await page.getByLabel('End Time', { exact: true }).fill('09:30');
   await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
   await expect(page).toHaveURL(/\/reservations$/);
-  const booking = (
-    await (await page.request.get('http://127.0.0.1:5000/api/reservations')).json()
-  )[0];
-  const csrfToken = (await (await request.get('http://127.0.0.1:5000/api/auth/csrf')).json())
-    .csrfToken;
-  await request.post('http://127.0.0.1:5000/api/auth/login', {
+  const booking = (await (await page.request.get(`${apiBase}/reservations`)).json())[0];
+  const csrfToken = (await (await request.get(`${apiBase}/auth/csrf`)).json()).csrfToken;
+  await request.post(`${apiBase}/auth/login`, {
     headers: { 'X-CSRF-Token': csrfToken },
     data: { email: 'admin@demo.local', password: 'PeakPickleDemo!2026' },
   });
-  const confirmation = await request.patch(
-    'http://127.0.0.1:5000/api/reservations/' + booking._id,
-    { headers: { 'X-CSRF-Token': csrfToken }, data: { status: 'confirmed' } },
-  );
+  const confirmation = await request.patch(`${apiBase}/reservations/${booking._id}`, {
+    headers: { 'X-CSRF-Token': csrfToken },
+    data: { status: 'confirmed' },
+  });
   expect(confirmation.ok()).toBeTruthy();
   await page.reload();
   await expect(page.locator('tbody tr')).toContainText('Confirmed');
@@ -135,11 +155,11 @@ test('anonymous and expired sessions stay outside protected pages', async ({ pag
   await expect(page.locator('.app-shell')).toHaveCount(0);
 });
 test('localhost uses matching cookie and API host', async ({ page }) => {
-  await page.goto('http://localhost:5173/login');
+  await page.goto(`${localFrontendBase}/login`);
   await page.getByLabel('Email', { exact: true }).fill('admin@demo.local');
   await page.getByLabel('Password', { exact: true }).fill('PeakPickleDemo!2026');
   await page.getByRole('button', { name: 'Log in', exact: true }).click();
-  await expect(page).toHaveURL('http://localhost:5173/admin/dashboard');
+  await expect(page).toHaveURL(`${localFrontendBase}/admin/dashboard`);
   await page.reload();
   await expect(page.locator('.app-shell')).toBeVisible();
 });

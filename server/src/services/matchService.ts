@@ -115,11 +115,16 @@ export async function recordResult(body: unknown) {
     return result;
   });
 }
-export async function matchesWithResults(filter: object = {}) {
-  const matches = await Match.find(filter)
+export async function matchesWithResults(
+  filter: object = {},
+  options: { limit?: number; skip?: number } = {},
+) {
+  const query = Match.find(filter)
     .populate(['courtId', 'players'])
-    .sort({ scheduledAt: -1 })
-    .lean();
+    .sort({ scheduledAt: -1, _id: -1 });
+  if (options.skip) query.skip(options.skip);
+  if (options.limit) query.limit(options.limit);
+  const matches = await query.lean();
   const results = await MatchResult.find({
     matchId: { $in: matches.map((match) => match._id) },
   }).lean();

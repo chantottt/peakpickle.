@@ -94,3 +94,16 @@ export function parse<T>(schema: z.ZodType<T>, data: unknown): T {
 export function validateId(value: string) {
   return parse(id, value);
 }
+const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).max(100000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).default(12),
+});
+export function pagination(page: unknown, pageSize: unknown) {
+  if (page === undefined && pageSize === undefined) return null;
+  const values = parse(paginationSchema, { page, pageSize });
+  return {
+    skip: (values.page - 1) * values.pageSize,
+    limit: values.pageSize + 1,
+    pageSize: values.pageSize,
+  };
+}

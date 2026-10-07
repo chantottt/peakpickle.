@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { api } from './services/api';
 import type { Player } from './types';
 export type Account = {
@@ -74,13 +74,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 export function Protected({ admin = false }: { admin?: boolean }) {
   const { account, loading } = useAuth();
+  const location = useLocation();
   if (loading)
     return (
       <div className="page-content" role="status">
         Loading session…
       </div>
     );
-  if (!account) return <Navigate to="/login" replace />;
+  if (!account)
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+        replace
+      />
+    );
   if (admin && account.role !== 'admin') return <Navigate to="/member/dashboard" replace />;
   return <Outlet />;
 }

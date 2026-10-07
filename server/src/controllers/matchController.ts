@@ -2,24 +2,25 @@ import type { RequestHandler } from 'express';
 import { Match } from '../models/Match.js';
 import { MatchResult } from '../models/MatchResult.js';
 import { assert } from '../utils/errors.js';
-import { validateId } from '../utils/validation.js';
+import { validateId, pagination } from '../utils/validation.js';
 import { matchesWithResults, saveMatch, recordResult } from '../services/matchService.js';
 import { courtTransaction } from '../services/courtLock.js';
+import { searchPlayerAndCourtIds } from '../services/searchService.js';
 export const list: RequestHandler = async (req, res) => {
-  const filter = {
+  const filter: Record<string, unknown> = {
     ...(req.query.playerId ? { players: validateId(String(req.query.playerId)) } : {}),
     ...(req.query.status ? { status: String(req.query.status) } : {}),
     ...(req.query.playType ? { playType: String(req.query.playType) } : {}),
     ...(req.query.courtId ? { courtId: validateId(String(req.query.courtId)) } : {}),
   };
   if (req.account?.role === 'member') Object.assign(filter, { players: req.account.playerId });
-  const search = String(req.query.search || '').toLowerCase();
-  res.json(
-    (await matchesWithResults(filter)).filter(
-      (match) =>
-        !search || JSON.stringify([match.courtId, match.players]).toLowerCase().includes(search),
-    ),
-  );
+  const search = await searchPlayerAndCourtIds(String(req.query.search || ''));
+  if (search)
+    filter.$or = [{ players: { $in: search.players } }, { courtId: { $in: search.courts } }];
+  const window = pagination(req.query.page, req.query.pageSize);
+  const rows = await matchesWithResults(filter, window || {});
+  if (window) res.set('X-Has-Next', String(rows.length > window.pageSize));
+  res.json(window ? rows.slice(0, window.pageSize) : rows);
 };
 export const detail: RequestHandler = async (req, res) => {
   const match = (await matchesWithResults({ _id: validateId(String(req.params.id)) }))[0];

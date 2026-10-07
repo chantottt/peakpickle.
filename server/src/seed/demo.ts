@@ -17,9 +17,10 @@ process.env.JWT_SECRET = randomBytes(48).toString('hex');
 await connectDatabase(database.getUri('peakpickle_demo'));
 console.log(await seedData());
 await demoAccounts();
-const server = app.listen(5000, () =>
+const demoPort = Number(process.env.DEMO_PORT || 5000);
+const server = app.listen(demoPort, () =>
   console.log(
-    'Temporary MongoDB demo API at http://127.0.0.1:5000/api. Data resets when stopped. Atlas mode: npm run dev:server.',
+    `Temporary MongoDB demo API at http://127.0.0.1:${demoPort}/api. Data resets when stopped. Atlas mode: npm run dev:server.`,
   ),
 );
 const shutdown = async () => {

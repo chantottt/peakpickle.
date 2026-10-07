@@ -9,19 +9,23 @@ export async function rankings() {
     MatchResult.find().lean(),
   ]);
   const resultByMatch = new Map(results.map((result) => [String(result.matchId), result]));
+  const totals = new Map(
+    players.map((player) => [String(player._id), { matchesPlayed: 0, wins: 0 }]),
+  );
+  for (const match of matches) {
+    const result = resultByMatch.get(String(match._id));
+    if (!result) continue;
+    const winners = new Set(result.winnerPlayerIds.map(String));
+    for (const playerId of match.players) {
+      const total = totals.get(String(playerId));
+      if (!total) continue;
+      total.matchesPlayed++;
+      if (winners.has(String(playerId))) total.wins++;
+    }
+  }
   return players
     .map((player) => {
-      const played = matches.filter(
-        (match) =>
-          match.players.some((id) => String(id) === String(player._id)) &&
-          resultByMatch.has(String(match._id)),
-      );
-      const wins = played.filter((match) =>
-        resultByMatch
-          .get(String(match._id))!
-          .winnerPlayerIds.some((id) => String(id) === String(player._id)),
-      ).length;
-      const matchesPlayed = played.length;
+      const { matchesPlayed, wins } = totals.get(String(player._id))!;
       return {
         ...player,
         matchesPlayed,

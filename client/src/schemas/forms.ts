@@ -1,4 +1,10 @@
 import { z } from 'zod';
+export const authSchema = z.object({
+  name: z.string().trim().max(80).optional(),
+  email: z.email('Enter a valid email address.'),
+  password: z.string().min(12, 'Use at least 12 characters.').max(128),
+});
+export type AuthFormValues = z.infer<typeof authSchema>;
 const requiredId = z.string().min(1, 'Please make a selection.');
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Choose a valid time.');
 export const playerSchema = z.object({

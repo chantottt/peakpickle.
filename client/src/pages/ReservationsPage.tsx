@@ -1,5 +1,5 @@
 import { useAuth } from '../auth';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
@@ -19,9 +19,11 @@ import {
   ConfirmDialog,
   EmptyState,
   Modal,
+  Pagination,
 } from '../components/ui';
 import { queryString, capitalize, dateLabel, timeLabel } from '../utils/format';
 export function ReservationsPage() {
+  const pageSize = 12;
   const { account } = useAuth();
   const admin = account?.role === 'admin';
   const [params] = useSearchParams();
@@ -29,13 +31,18 @@ export function ReservationsPage() {
   const [status, setStatus] = useState('');
   const [courtId, setCourtId] = useState(params.get('court') || '');
   const [date, setDate] = useState('');
+  const [page, setPage] = useState(1);
   const [remove, setRemove] = useState<Reservation | null>(null);
   const [view, setView] = useState<Reservation | null>(null);
   const mutation = useMutation();
   const state = useApi<Reservation[]>(
-    `/reservations?${queryString({ search, status, courtId, date })}`,
+    `/reservations?${queryString({ search, status, courtId, date, page: String(page), pageSize: String(pageSize) })}`,
   );
   const courts = useApi<Court[]>('/courts');
+  const visibleReservations = state.data || [];
+  useEffect(() => {
+    if (!state.loading && state.data?.length === 0 && page > 1) setPage(page - 1);
+  }, [state.loading, state.data, page]);
   return (
     <>
       <PageHeader
@@ -49,10 +56,20 @@ export function ReservationsPage() {
         }
       />
       <div className="filters">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search player or court…" />
+        <SearchBar
+          value={search}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          placeholder="Search player or court…"
+        />
         <FilterSelect
           value={status}
-          onChange={setStatus}
+          onChange={(value) => {
+            setStatus(value);
+            setPage(1);
+          }}
           label="All Status"
           options={['pending', 'confirmed', 'completed', 'cancelled'].map((value) => ({
             value,
@@ -61,7 +78,10 @@ export function ReservationsPage() {
         />
         <FilterSelect
           value={courtId}
-          onChange={setCourtId}
+          onChange={(value) => {
+            setCourtId(value);
+            setPage(1);
+          }}
           label="All Courts"
           options={courts.data?.map((court) => ({ value: court._id, label: court.name })) || []}
         />
@@ -69,7 +89,10 @@ export function ReservationsPage() {
           type="date"
           aria-label="Reservation date"
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setPage(1);
+          }}
         />
       </div>
       <DataState
@@ -81,11 +104,11 @@ export function ReservationsPage() {
           void courts.refetch();
         }}
       >
-        {state.data?.length ? (
+        {visibleReservations.length ? (
           <>
             <Table headers={['Player', 'Court', 'Date', 'Time', 'Status', 'Actions']}>
               <>
-                {state.data.map((reservation) => (
+                {visibleReservations.map((reservation) => (
                   <tr key={reservation._id}>
                     <td data-label="Player">
                       <div className="table-person">
@@ -152,8 +175,9 @@ export function ReservationsPage() {
               </>
             </Table>
             <p className="table-footnote">
-              {state.data.length} reservations · All times are in Asia/Manila.
+              Showing {visibleReservations.length} reservations · All times are in Asia/Manila.
             </p>
+            <Pagination page={page} hasNext={state.hasNext} onChange={setPage} />
           </>
         ) : (
           <CardEmpty />

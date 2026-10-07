@@ -4,10 +4,11 @@ import { ActivityPage } from './ActivityPage';
 import { useApi } from '../hooks/useApi';
 import type { Player, Match } from '../types';
 import { MatchCard } from '../components/matches/MatchCard';
+import { DataState, EmptyState } from '../components/ui';
 export function MemberDashboardPage() {
   const { account } = useAuth();
   const profile = useApi<Player>(account?.playerId ? `/players/${account.playerId}` : null);
-  const matches = useApi<Match[]>('/matches');
+  const matches = useApi<Match[]>('/matches?status=completed&page=1&pageSize=5');
   if (account?.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
   return (
     <>
@@ -24,27 +25,33 @@ export function MemberDashboardPage() {
           My profile & statistics
         </Link>
       </div>
-      {profile.data && (
-        <div className="card">
-          <h2>Player statistics</h2>
-          <p>
-            {profile.data.skillLevel} · {profile.data.preferredPlay}
-          </p>
-          <p>
-            Played: {profile.data.matchesPlayed} · Wins: {profile.data.wins} · Losses:{' '}
-            {profile.data.losses}
-          </p>
-        </div>
-      )}
+      <DataState {...profile} hasData={!!profile.data} onRetry={profile.refetch}>
+        {profile.data && (
+          <div className="card">
+            <h2>Player statistics</h2>
+            <p>
+              {profile.data.skillLevel} · {profile.data.preferredPlay}
+            </p>
+            <p>
+              Played: {profile.data.matchesPlayed} · Wins: {profile.data.wins} · Losses:{' '}
+              {profile.data.losses}
+            </p>
+          </div>
+        )}
+      </DataState>
       <ActivityPage />
       <h2>Recent matches</h2>
-      {matches.error && <p role="alert">{matches.error}</p>}
-      {matches.data
-        ?.filter((match) => match.status === 'completed')
-        .slice(0, 5)
-        .map((match) => (
+      <DataState {...matches} hasData={!!matches.data} onRetry={matches.refetch}>
+        {matches.data?.map((match) => (
           <MatchCard key={match._id} match={match} />
         ))}
+        {matches.data?.length === 0 && (
+          <EmptyState
+            title="No completed matches yet"
+            description="Your results will appear here after your first match."
+          />
+        )}
+      </DataState>
     </>
   );
 }

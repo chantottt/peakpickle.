@@ -273,6 +273,28 @@ export function DataState({
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
   return <>{children}</>;
 }
+export function Pagination({
+  page,
+  hasNext,
+  onChange,
+}: {
+  page: number;
+  hasNext: boolean;
+  onChange: (page: number) => void;
+}) {
+  if (page === 1 && !hasNext) return null;
+  return (
+    <nav className="pagination" aria-label="Results pages">
+      <Button variant="secondary" disabled={page === 1} onClick={() => onChange(page - 1)}>
+        Previous
+      </Button>
+      <span aria-current="page">Page {page}</span>
+      <Button variant="secondary" disabled={!hasNext} onClick={() => onChange(page + 1)}>
+        Next
+      </Button>
+    </nav>
+  );
+}
 export function Table({
   headers,
   children,
